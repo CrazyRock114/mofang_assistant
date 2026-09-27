@@ -1,0 +1,373 @@
+/* 0049 首页 v3「工作足迹」样式（设计稿 home-dashboard-v3 设计稿 类名落地）。
+   ==========================================================================
+   纪律（D-068 避让表）：本文件是首页 v3 唯一新增样式入口；theme.css / app.css /
+   workbench.css / papers.css 本单零改动。全部规则以 `.home-v3` 作用域收敛，
+   避免与全局类（.card/.hero/.notice-warm/.st-pill/.pcard…）互相污染。
+   复用而非重定义：主题 token 全取 theme.css 既有变量；.st-pill 与 .tape 沿用全局口径；
+   .notice/.notice-warm 沿用全局提示条。
+   0037 遗留的 `.dash-*` 块（theme.css §首页）随 v3 失用——按避让纪律**不删**，
+   退役挂账见 0049 交付报告。
+   ========================================================================== */
+
+/* 热力图色阶（三主题分档；方向不许反：浅底=墨绿由浅到深，夜航=同色系透明度递增） */
+:root,
+:root[data-theme="warm"] {
+  --heat0: color-mix(in srgb, var(--ink) 7%, transparent);
+  --heat1: #CFE0CF;
+  --heat2: #9CC7A4;
+  --heat3: #5E9673;
+  --heat4: #2F5D45;
+}
+:root[data-theme="light"] {
+  --heat0: color-mix(in srgb, var(--ink) 7%, transparent);
+  --heat1: #D3EADF;
+  --heat2: #A9D9BC;
+  --heat3: #6FBE94;
+  --heat4: #0E9F6E;
+}
+:root[data-theme="dark"] {
+  --heat0: rgba(220, 228, 242, .08);
+  --heat1: rgba(52, 211, 153, .16);
+  --heat2: rgba(52, 211, 153, .34);
+  --heat3: rgba(52, 211, 153, .58);
+  --heat4: rgba(52, 211, 153, .88);
+}
+
+/* ============ 页头带 ============ */
+.home-v3 .hero { display: flex; align-items: center; gap: 13px; margin-bottom: 18px; }
+.home-v3 .hero h1 {
+  font-family: var(--font-serif);
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  margin: 0;
+}
+.home-v3 .hero-sub { font-size: 12.5px; color: var(--ink-3); white-space: nowrap; }
+.home-v3 .hero-date { color: var(--ink-2); font-weight: 600; }
+.home-v3 .hero-right { margin-left: auto; display: flex; align-items: center; gap: 10px; flex: none; }
+.home-v3 .streak {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+  background: var(--note-yellow);
+  border: 1px dashed var(--gold);
+  color: var(--gold-text);
+  border-radius: 99px;
+  padding: 5px 13px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: help;
+}
+
+/* ============ 快捷入口（通栏横条四卡） ============ */
+.home-v3 .quick { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
+.home-v3 .qentry {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-align: left;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 13px 14px;
+  box-shadow: var(--shadow-card);
+  color: var(--ink);
+  transition: transform .15s ease, border-color .15s ease, box-shadow .15s ease;
+}
+.home-v3 .qentry:hover { transform: translateY(-2px); border-color: var(--orange); box-shadow: var(--shadow-pop); }
+.home-v3 .qicon {
+  width: 42px;
+  height: 42px;
+  border-radius: 11px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+/* 色砖四色（violet=反馈为固定内容色，同 paper-sheet 例外口径：三主题不换色） */
+.home-v3 .qentry[data-tint="orange"] .qicon { background: var(--orange-soft); color: var(--orange-deep); }
+.home-v3 .qentry[data-tint="green"] .qicon { background: var(--green-soft); color: var(--green-ink); }
+.home-v3 .qentry[data-tint="gold"] .qicon { background: var(--note-yellow); color: var(--gold-text); }
+.home-v3 .qentry[data-tint="violet"] .qicon { background: #ECE7F5; color: #6A5A9E; }
+.home-v3 .qtext { min-width: 0; }
+.home-v3 .qname { display: block; font-size: 14.5px; font-weight: 700; }
+.home-v3 .qdesc { display: block; font-size: 11.5px; color: var(--ink-3); margin-top: 2px; }
+.home-v3 .qarrow {
+  margin-left: auto;
+  flex: none;
+  color: var(--ink-3);
+  opacity: 0;
+  transform: translateX(-4px);
+  transition: all .15s ease;
+  font-size: 15px;
+}
+.home-v3 .qentry:hover .qarrow { opacity: 1; transform: translateX(0); color: var(--orange-deep); }
+
+/* ============ 双主角：5:7（左资产=存量 ∥ 右足迹=流量） ============ */
+.home-v3 .duo { display: grid; grid-template-columns: 5fr 7fr; gap: 16px; margin-bottom: 16px; align-items: stretch; }
+.home-v3 .card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-card);
+  padding: 16px 18px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+.home-v3 .zone-title { font-size: 13px; font-weight: 700; color: var(--ink-2); display: flex; align-items: center; gap: 7px; margin-bottom: 12px; }
+.home-v3 .zone-title .more {
+  margin-left: auto;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--orange-deep);
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+/* ⓘ 口径 tooltip（说明性文字唯一去处；纯 CSS 悬停展开） */
+.home-v3 .info-tip {
+  display: inline-flex;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  flex: none;
+  border: 1px solid var(--line-strong);
+  color: var(--ink-3);
+  font-size: 9.5px;
+  align-items: center;
+  justify-content: center;
+  cursor: help;
+  position: relative;
+  font-style: normal;
+}
+.home-v3 .info-tip .itip {
+  display: none;
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 8px);
+  transform: translateX(-50%);
+  width: 240px;
+  background: var(--ink);
+  color: var(--paper);
+  font-size: 11.5px;
+  line-height: 1.6;
+  border-radius: 8px;
+  padding: 8px 11px;
+  z-index: 20;
+  box-shadow: var(--shadow-pop);
+  font-weight: 400;
+}
+.home-v3 .info-tip:hover .itip { display: block; }
+
+/* ============ 资产卡：2×2 存量大数字 + 沉淀曲线 ============ */
+.home-v3 .asset-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.home-v3 .asset { background: var(--card-warm); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 11px 14px; }
+.home-v3 .asset .num {
+  font-family: var(--font-serif);
+  font-size: 27px;
+  font-weight: 800;
+  color: var(--green-deep);
+  font-variant-numeric: tabular-nums;
+}
+.home-v3 .asset .num .unit { font-size: 12px; font-weight: 400; color: var(--ink-3); margin-left: 3px; }
+.home-v3 .asset .lbl { font-size: 12px; color: var(--ink-2); margin-top: 2px; display: flex; align-items: center; gap: 4px; }
+
+.home-v3 .grow { border-top: 1px dashed var(--line-strong); margin-top: 12px; padding-top: 10px; flex: 1; display: flex; flex-direction: column; }
+.home-v3 .grow-head { display: flex; align-items: center; font-size: 11px; color: var(--ink-3); margin-bottom: 6px; }
+.home-v3 .grow-delta {
+  margin-left: auto;
+  color: var(--green-ink);
+  font-weight: 700;
+  font-size: 11px;
+  background: var(--green-soft);
+  border-radius: 99px;
+  padding: 1px 9px;
+  font-variant-numeric: tabular-nums;
+}
+.home-v3 .grow-chart {
+  flex: 1;
+  min-height: 96px;
+  border-radius: var(--radius-sm);
+  background: repeating-linear-gradient(0deg, transparent 0 23px, color-mix(in srgb, var(--line) 55%, transparent) 23px 24px);
+  position: relative;
+}
+.home-v3 .grow-chart svg { display: block; width: 100%; height: 100%; }
+.home-v3 .grow-end {
+  position: absolute;
+  right: 6px;
+  transform: translateY(50%);
+  font-family: var(--font-serif);
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--green-deep);
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+  /* 终点数字压在曲线上方：垫一层卡片底色，避免与折线互相干扰 */
+  background: var(--card);
+  border-radius: 6px;
+  padding: 0 4px;
+  line-height: 1.35;
+}
+.home-v3 .grow-axis { position: relative; height: 14px; margin-top: 4px; font-size: 10px; color: var(--ink-3); }
+.home-v3 .grow-axis span { position: absolute; top: 0; transform: translateX(-50%); white-space: nowrap; }
+.home-v3 .grow-axis span:first-child { transform: none; }
+.home-v3 .grow-axis span:last-child { transform: translateX(-100%); }
+
+/* 空库引导（资产区整区替换） */
+.home-v3 .empty-hero { text-align: center; padding: 26px 20px 18px; margin: auto; }
+.home-v3 .empty-hero h3 { font-size: 16px; margin: 10px 0 6px; }
+.home-v3 .empty-hero p { font-size: 12.5px; color: var(--ink-3); margin: 0 0 16px; }
+.home-v3 .empty-acts { display: flex; gap: 10px; justify-content: center; }
+
+/* ============ 足迹卡（流量） ============ */
+.home-v3 .flow-head { display: flex; align-items: baseline; margin-bottom: 10px; }
+.home-v3 .flow-head .zone-title { margin-bottom: 0; }
+.home-v3 .flow-total { margin-left: auto; display: flex; align-items: baseline; gap: 6px; }
+.home-v3 .flow-total .n {
+  font-family: var(--font-serif);
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.home-v3 .flow-total .u { font-size: 11.5px; color: var(--ink-3); }
+.home-v3 .notice { margin-bottom: 10px; }
+
+/* 热力图（26 周 × 7；格=当日全部工作动作数；墨绿色阶） */
+.home-v3 .heat-zone { display: flex; gap: 8px; }
+.home-v3 .heat-wk { display: grid; grid-template-rows: repeat(7, 18px); gap: 3px; font-size: 10px; color: var(--ink-3); padding-top: 16px; }
+.home-v3 .heat-wk span { line-height: 18px; height: 18px; }
+.home-v3 .heat-main { flex: 1; min-width: 0; position: relative; }
+.home-v3 .heat-months { display: grid; grid-auto-flow: column; grid-auto-columns: 21px; height: 13px; margin-bottom: 3px; font-size: 10px; color: var(--ink-3); }
+.home-v3 .heat-months span { white-space: nowrap; }
+.home-v3 .heat { display: grid; grid-auto-flow: column; grid-template-rows: repeat(7, 18px); grid-auto-columns: 18px; gap: 3px; }
+.home-v3 .hcell { width: 18px; height: 18px; border-radius: 4.5px; background: var(--heat0); cursor: default; position: relative; }
+.home-v3 .hcell.lv1 { background: var(--heat1); }
+.home-v3 .hcell.lv2 { background: var(--heat2); }
+.home-v3 .hcell.lv3 { background: var(--heat3); }
+.home-v3 .hcell.lv4 { background: var(--heat4); }
+.home-v3 .hcell:hover { outline: 2px solid var(--orange); }
+.home-v3 .hcell.today { box-shadow: 0 0 0 2px var(--orange); }
+.home-v3 .heat-foot { display: flex; align-items: center; margin-top: 8px; font-size: 10.5px; color: var(--ink-3); }
+.home-v3 .heat-scale { margin-left: auto; display: inline-flex; align-items: center; gap: 3px; }
+.home-v3 .heat-scale i { width: 10px; height: 10px; border-radius: 3px; }
+.home-v3 .heat-scale i:nth-of-type(1) { background: var(--heat0); }
+.home-v3 .heat-scale i:nth-of-type(2) { background: var(--heat1); }
+.home-v3 .heat-scale i:nth-of-type(3) { background: var(--heat2); }
+.home-v3 .heat-scale i:nth-of-type(4) { background: var(--heat3); }
+.home-v3 .heat-scale i:nth-of-type(5) { background: var(--heat4); }
+
+/* 空足迹覆盖层（灰格 + 中央虚线提示） */
+.home-v3 .heat-empty-veil { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+.home-v3 .heat-empty-veil span {
+  background: var(--card);
+  border: 1px dashed var(--line-strong);
+  border-radius: 99px;
+  padding: 6px 16px;
+  font-size: 12px;
+  color: var(--ink-3);
+  box-shadow: var(--shadow-card);
+}
+
+/* 足迹底行：近 30 日堆叠条 ∥ 五类图例 */
+.home-v3 .flow-bottom {
+  display: grid;
+  grid-template-columns: 1fr 218px;
+  gap: 16px;
+  border-top: 1px dashed var(--line-strong);
+  margin-top: 12px;
+  padding-top: 12px;
+  flex: 1;
+}
+.home-v3 .bars-head { display: flex; align-items: center; font-size: 11px; color: var(--ink-3); margin-bottom: 6px; }
+.home-v3 .bars-chart { position: relative; }
+.home-v3 .bars-svg { display: block; width: 100%; height: 112px; }
+.home-v3 .bars-svg .seg { transition: opacity .12s; }
+.home-v3 .bars-svg.dim .seg { opacity: .12; }
+.home-v3 .bars-svg.dim .seg.keep { opacity: 1; }
+.home-v3 .bars-axis { display: flex; justify-content: space-between; font-size: 10px; color: var(--ink-3); margin-top: 3px; }
+.home-v3 .bar-hot { position: absolute; top: 0; bottom: 0; }
+.home-v3 .legend { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 8px; align-content: start; }
+.home-v3 .lg {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  color: var(--ink-2);
+  border: 0;
+  background: none;
+  font-family: inherit;
+  border-radius: 8px;
+  padding: 3px 7px;
+  cursor: pointer;
+  transition: background .12s, opacity .12s;
+  user-select: none;
+}
+.home-v3 .lg:hover { background: var(--card-warm); }
+.home-v3 .lg .dot { width: 9px; height: 9px; border-radius: 3px; flex: none; }
+.home-v3 .lg .n { margin-left: auto; font-family: var(--font-serif); font-weight: 700; font-variant-numeric: tabular-nums; }
+.home-v3 .lg.off { opacity: .3; }
+.home-v3 .ai-line {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  color: var(--ink-3);
+  border-top: 1px dashed var(--line);
+  padding-top: 8px;
+  margin-top: 4px;
+}
+.home-v3 .ai-line b { color: var(--ink-2); font-variant-numeric: tabular-nums; }
+
+/* 悬停明细弹层（热力图格 / 堆叠条共用）：CSS 悬停展开，边缘列右对齐防溢出 */
+.home-v3 .hcell .tip,
+.home-v3 .bar-hot .tip {
+  display: none;
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 6px);
+  transform: translateX(-50%);
+  min-width: 118px;
+  background: var(--ink);
+  color: var(--paper);
+  border-radius: 8px;
+  padding: 8px 11px;
+  font-size: 11.5px;
+  line-height: 1.65;
+  box-shadow: var(--shadow-pop);
+  z-index: 40;
+  pointer-events: none;
+  font-weight: 400;
+}
+.home-v3 .hcell:hover .tip,
+.home-v3 .bar-hot:hover .tip { display: block; }
+.home-v3 .hcell:nth-last-child(-n + 3) .tip { left: auto; right: 0; transform: none; }
+.home-v3 .bar-hot:nth-last-child(-n + 3) .tip { left: auto; right: 0; transform: none; }
+.home-v3 .tip .tt { display: block; font-weight: 700; white-space: nowrap; margin-bottom: 2px; }
+.home-v3 .tip .tr { display: flex; gap: 6px; align-items: center; white-space: nowrap; }
+.home-v3 .tip .tr i { width: 8px; height: 8px; border-radius: 2.5px; flex: none; }
+.home-v3 .tip .tr em { font-style: normal; margin-left: 4px; font-variant-numeric: tabular-nums; opacity: .85; }
+
+/* ============ 最近试卷（便签黄 C 位 + 胶带 + 微倾） ============ */
+.home-v3 .recent-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.home-v3 .pcard {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--card-warm);
+  padding: 13px 15px;
+  cursor: pointer;
+  transition: transform .15s, box-shadow .15s, border-color .15s;
+  position: relative;
+}
+.home-v3 .pcard:hover { transform: translateY(-2px); box-shadow: var(--shadow-card); border-color: var(--orange); }
+.home-v3 .pcard.star { background: var(--note-yellow); border: 1px dashed var(--gold); transform: rotate(-.6deg); }
+.home-v3 .pcard.star:hover { transform: rotate(-.6deg) translateY(-2px); }
+.home-v3 .pcard .pt { font-weight: 700; font-size: 13.5px; display: flex; align-items: center; gap: 7px; }
+.home-v3 .pcard .pm { display: flex; align-items: center; gap: 8px; font-size: 11.5px; color: var(--ink-3); margin-top: 8px; }
+.home-v3 .pcard .pm .t { margin-left: auto; font-variant-numeric: tabular-nums; }

@@ -1,0 +1,147 @@
+/* ============================================================
+   0030 反馈工作台样式（设计稿 feedback-workbench 设计稿 v1 落地）
+   作用域：.fbw-* 前缀（零全局选择器、零变量定义——色值一律引用 theme.css 既有变量，
+   三主题自动跟随）。与 0005 时代的内联样式页不同，本单把版式收进本文件。
+   视图对应：①快速模式 .fbw-qk  ②班级批量 .fbw-bt  ③反馈记录 .fbw-rc  ④提示词模板 .fbw-tp
+   ============================================================ */
+
+/* ---------- 通用 ---------- */
+/* 输入框只许纵向拉伸（目检返工①：浏览器默认右下角可两向拖拽，会把左栏表单拖变形） */
+.fbw-scope textarea { resize: vertical; }
+
+.fbw-tabs { display: flex; gap: 6px; margin-bottom: 14px; flex-wrap: wrap; }
+.fbw-card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-card);
+  padding: 14px 16px;
+}
+.fbw-card h3 { font-size: 14px; margin: 0 0 12px; display: flex; align-items: center; gap: 8px; }
+.fbw-muted { color: var(--ink-3); font-size: 12px; }
+.fbw-row { display: flex; align-items: center; gap: 8px; }
+.fbw-sp { flex: 1; }
+
+/* ---------- 标签 chips（课堂表现/风格三维） ---------- */
+.fbw-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.fbw-chip {
+  padding: 4px 12px; border-radius: 999px; font-size: 12.5px; cursor: pointer;
+  border: 1px solid var(--line-strong); color: var(--ink-2); background: var(--card); user-select: none;
+}
+.fbw-chip:hover { border-color: var(--orange); color: var(--orange-deep); }
+.fbw-chip.on { background: var(--note-yellow); border-color: var(--gold); color: var(--gold-text); font-weight: 600; }
+.fbw-chip.on-pos { background: var(--st-green-bg); border-color: var(--st-green); color: var(--st-green); font-weight: 600; }
+.fbw-chip.on-neg { background: var(--st-red-bg); border-color: var(--st-red); color: var(--st-red); font-weight: 600; }
+.fbw-chip-custom { border-style: dashed; }
+.fbw-chip-custom input {
+  border: none; background: transparent; outline: none; font-family: inherit;
+  font-size: 12.5px; width: 96px; color: var(--ink);
+}
+
+/* ---------- 视图一：快速模式 ---------- */
+.fbw-qk { display: flex; gap: 16px; align-items: flex-start; flex-wrap: wrap; }
+.fbw-qk-form { width: 430px; max-width: 100%; flex: none; }
+.fbw-qk-right { flex: 1; min-width: 320px; display: flex; flex-direction: column; gap: 14px; }
+.fbw-style-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.fbw-style-row:last-child { margin-bottom: 0; }
+.fbw-style-row .k { width: 64px; flex: none; font-size: 12.5px; color: var(--ink-2); }
+.fbw-out-body {
+  border: 1px solid var(--line); border-radius: 10px; background: var(--card-warm);
+  padding: 12px 14px; min-height: 150px; line-height: 1.9; font-size: 13.5px;
+}
+.fbw-guard { display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; border-radius: 999px; padding: 2px 10px; }
+.fbw-guard.ok { color: var(--st-green); background: var(--st-green-bg); }
+.fbw-guard.hit { color: var(--st-red); background: var(--st-red-bg); }
+.fbw-hit-list { font-size: 11.5px; color: var(--st-red); background: var(--st-red-bg); border-radius: 8px; padding: 6px 10px; margin-top: 8px; line-height: 1.7; }
+
+/* ---------- 视图二：班级批量 ---------- */
+.fbw-bt-config .fbw-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 20px; }
+.fbw-stu-head, .fbw-stu {
+  display: grid; grid-template-columns: 30px 96px 96px 1fr 150px; gap: 10px; align-items: center;
+  padding: 8px 10px; font-size: 13px;
+}
+.fbw-stu-head { color: var(--ink-3); font-size: 12px; }
+.fbw-stu { border-top: 1px solid var(--line); }
+.fbw-stu .name { font-weight: 600; }
+.fbw-stu .fbw-chips .fbw-chip { padding: 2px 9px; font-size: 11.5px; }
+.fbw-stu input[type="text"], .fbw-stu input.input { padding: 3px 8px; font-size: 12.5px; }
+.fbw-score-input { width: 62px; }
+.fbw-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 12px; }
+.fbw-fb-card { display: flex; flex-direction: column; }
+.fbw-fb-card.warn { border-color: var(--st-red); }
+.fbw-fb-card .fh { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.fbw-fb-card .n { font-weight: 700; font-size: 13.5px; }
+.fbw-fb-card .fa { display: flex; gap: 7px; margin-top: 10px; align-items: center; }
+.fbw-fb-card textarea {
+  width: 100%; padding: 8px 10px; font-size: 12.5px; line-height: 1.8;
+  font-family: inherit; background: var(--card-warm); color: var(--ink);
+  border: 1px solid var(--line); border-radius: 9px; resize: vertical;
+}
+.fbw-bar {
+  display: flex; align-items: center; gap: 12px; padding: 10px 14px; margin-top: 14px;
+  position: sticky; bottom: 12px; box-shadow: var(--shadow-pop); flex-wrap: wrap;
+}
+.fbw-bar b { color: var(--orange-deep); }
+
+/* ---------- 视图三：反馈记录 ---------- */
+.fbw-rc-tools { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 12px; }
+.fbw-rc-tools .input { max-width: 200px; }
+.fbw-rec-row {
+  display: grid; grid-template-columns: 118px 130px 110px 1fr 170px; gap: 10px; align-items: center;
+  padding: 10px 12px; font-size: 13px; border-top: 1px solid var(--line);
+}
+.fbw-rec-row.head { border-top: none; color: var(--ink-3); font-size: 12px; padding: 6px 12px; }
+.fbw-rec-row .sum { color: var(--ink-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fbw-badge { display: inline-block; padding: 1px 9px; border-radius: 999px; font-size: 11px; font-weight: 600; }
+.fbw-badge.unlinked { background: var(--st-yellow-bg); color: var(--st-yellow-text, var(--st-yellow)); }
+.fbw-badge.quick { background: var(--paper-deep); color: var(--ink-3); }
+.fbw-badge.batch { background: var(--orange-soft); color: var(--orange-deep); }
+
+/* ---------- 视图四：提示词模板 ---------- */
+.fbw-tp { display: flex; gap: 16px; align-items: flex-start; flex-wrap: wrap; }
+.fbw-tp-list { width: 250px; flex: none; }
+.fbw-tp-list h4 { font-size: 12px; color: var(--ink-3); margin: 6px 0 8px; }
+.fbw-tp-item {
+  padding: 8px 12px; border-radius: 9px; font-size: 13px; cursor: pointer; color: var(--ink-2);
+  display: flex; align-items: center; gap: 7px;
+}
+.fbw-tp-item:hover { background: rgba(255, 253, 247, 0.7); }
+.fbw-tp-item.on { background: var(--card); color: var(--ink); font-weight: 600; box-shadow: var(--shadow-card); }
+.fbw-tp-item .tag { margin-left: auto; font-size: 10.5px; color: var(--ink-3); }
+.fbw-tp-edit { flex: 1; min-width: 340px; }
+.fbw-vars {
+  font-size: 12px; color: var(--ink-2); background: var(--paper);
+  border: 1px dashed var(--line-strong); border-radius: 9px; padding: 8px 12px; line-height: 1.9; margin-bottom: 12px;
+}
+.fbw-vars code { background: var(--paper-deep); border-radius: 4px; padding: 1px 5px; font-size: 11.5px; margin-right: 4px; }
+.fbw-tp-edit textarea {
+  width: 100%; min-height: 240px; font-size: 12.5px; line-height: 1.75;
+  font-family: ui-monospace, Consolas, monospace; padding: 10px 12px;
+  background: var(--card-warm); color: var(--ink); border: 1px solid var(--line-strong); border-radius: 9px;
+}
+
+/* 一次性的具体表现条目（第二轮返工④：带删除按钮的实心块，与标签 chip 区分） */
+.fbw-extra { display: inline-flex; align-items: center; gap: 6px; }
+.fbw-extra button {
+  border: none; background: transparent; cursor: pointer; color: inherit;
+  font-size: 13px; line-height: 1; padding: 0 0 0 2px; opacity: 0.7;
+}
+.fbw-extra button:hover { opacity: 1; }
+
+/* 反馈设置页·标签面板：一行一个标签（色标 + 名称 + 内置/自定义 + 操作），行内编辑态同宽 */
+.fbw-tag-row {
+  display: flex; align-items: center; gap: 8px; padding: 7px 4px;
+  border-top: 1px solid var(--line); font-size: 13px;
+}
+.fbw-tag-row.editing { background: var(--card-warm); border-radius: 8px; }
+.fbw-tag-row .btn-sm { padding: 3px 10px; font-size: 12px; }
+
+/* 反馈设置页里的行内删除按钮（标签行/模板行） */
+.fbw-tp-item .btn-sm { padding: 2px 8px; font-size: 11.5px; margin-left: 6px; }
+
+/* 窄屏兜底：两栏视图塌成单栏（教师常在 1280×800 笔电上批改） */
+@media (max-width: 1100px) {
+  .fbw-qk-form, .fbw-tp-list { width: 100%; }
+  .fbw-rec-row { grid-template-columns: 100px 110px 1fr; }
+  .fbw-rec-row .cls, .fbw-rec-row .ops { display: none; }
+}

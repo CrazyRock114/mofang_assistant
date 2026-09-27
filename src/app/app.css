@@ -1,0 +1,202 @@
+/* 魔方助教产品全局样式（React 主界面）
+ *
+ * 与 src/docgen/render/paper.css（PDF/预览打印用）保持同规则，供主界面各页面
+ * （组卷主列表/题目选择器/校对页/采集预览）渲染题目 HTML 时约束图片尺寸：
+ * - 采集题行内公式/符号小图（<span class="inline-figure">）内联不折断
+ * - 块级配图（<figure class="diagram">）硬限 min(48%, 240px)（0014 实测定档，2045px 原图不再撑爆）
+ * - 答案/解析字段图放开 100%（0014 目检返工——组卷网答案整图按答案区满宽显示）
+ * - 无 data-w 兜底（img 原始尺寸若超容器 → max-width:100% 收敛）
+ */
+
+/* 答案/解析字段大图：放开到容器 100%（0014 目检返工——组卷网答案/解析以整图给出，
+ * 原 80% 限宽把密集文字图缩到不可读；题卡容器即边界。与 .inline-figure > img 同为 0-1-1
+ * 特异性，置于 .inline-figure 规则之前，靠源序保证行内小图仍 200px 封顶 */
+.answer-field img,
+.analysis-field img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* 0014 目检返工二：答案/解析区内的块图容器一并放开——组卷网答案整图多被 <figure class="diagram">
+ * 包裹，会吃掉全局块图 min(48%,240px) 档（0-2-1 特异性覆盖 0-1-0），整图按答案区满宽显示 */
+.answer-field figure.diagram,
+.analysis-field figure.diagram {
+  max-width: 100%;
+}
+
+.inline-figure {
+  display: inline-block;
+  vertical-align: middle;
+  margin: 0 0.1em;
+  line-height: 1;
+}
+
+/* 0041（2026-09-18 用户目检拍板「题库/排版对齐试题篮采集预览」）：与 paper.css 同步取消
+ * 0010-merge P5 的 1.25×字号下限放大——采集预览渲染未归一化的原始站点 HTML（裸 img → 内在尺寸），
+ * 题库题卡走 .inline-figure 契约曾被下限档抬到 20px（真机实测墨迹高 16.7-18.7px vs 采集预览 8.7-13.3px、
+ * 正文 12pt≈15px）→ 观感偏大。现行按内在尺寸出图（= 原站观感）；
+ * width:auto!important 覆盖 data-w 内联宽（防存量脏数据），200px 封顶保留。 */
+.inline-figure > img {
+  height: auto;
+  width: auto !important;
+  max-width: 200px;
+  vertical-align: middle;
+}
+
+/* 块级配图：水平居中 + 硬限 min(48%, 240px)（0014 实测定档 320px → 目检返工终档 240px，
+ * 见 0014 交付报告：真库 78 张块图宽中位 669px/p25=308；用户拍板参照学科网再收一档）；
+ * height 按比例 */
+figure.diagram {
+  margin: 0.8em auto;
+  text-align: center;
+  max-width: min(48%, 240px);
+}
+
+/* figure 容器内 img 相对容器 100%（容器已封顶 min(48%,240px)） */
+figure.diagram > img,
+figure.diagram img.q-figure {
+  max-width: 100%;
+  height: auto;
+}
+
+/* 裸 img.q-figure（不在 figure 内）：硬限 min(48%, 240px)（0014 与 figure.diagram 同档） */
+img.q-figure {
+  max-width: min(48%, 240px);
+  height: auto;
+}
+
+/* 兜底：任何裸题内图不超出容器（防超大原图撑破布局） */
+.question-content img,
+.question img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* fix-1b：题库条目改为单层完整题卡（`.question-content` 容器，与采集预览同管线同容器），
+ * fix-1 B 的展开面板与 `.bank-detail` 作用域规则一并移除——题卡图限宽由上方全局规则保证
+ * （figure.diagram min(48%,240px) / img.q-figure 同档 / inline-figure 200px / .question-content img 100% 兜底）。 */
+
+/* fix-1b：题卡/采集预览的选项逐行显示——与卷内 paper.css 的 `.option` 块级语义一致
+ * （app.css 此前无 .option 规则 → 多个选项 span 挤成一行；结构化选项在题卡渲染时已前置 A./B. 标号）。 */
+.question-content .options .option {
+  display: block;
+  margin: 0.15em 0;
+}
+
+/* ===== 0050（R-037 第①步）：题卡内容表格样式（内容表格样式区段） =====
+ * 识别链 markdown 表格 → 契约 <table>（0050 P1）在题卡/采集预览/错题本/校对页的展示档：
+ * 细边框 + 表头底色 + 紧凑行高；配色全走 token（题卡底色随三主题，不写死色值）。
+ * 作用域 = 内容容器（.question-content 与题根 .question；.q-stem/.m-stem 为同族题卡容器）。
+ * 编辑态表格样式在 src/docgen/editor/editor.css（0045），出纸/Word 在 paper.css 与 docx 侧（0050 P3/P4）。 */
+.question-content table,
+.question table,
+.q-stem table,
+.m-stem table {
+  border-collapse: collapse;
+  max-width: 100%;
+  margin: 0.5em 0;
+  font-size: 0.95em;
+  line-height: 1.45;
+}
+
+.question-content table th,
+.question-content table td,
+.question table th,
+.question table td,
+.q-stem table th,
+.q-stem table td,
+.m-stem table th,
+.m-stem table td {
+  border: 1px solid var(--line-strong);
+  padding: 3px 8px;
+  vertical-align: top;
+  text-align: left;
+  /* 长串/长公式不撑破卡片（表格自带 max-width；此处收最后一档） */
+  overflow-wrap: anywhere;
+}
+
+.question-content table th,
+.question table th,
+.q-stem table th,
+.m-stem table th {
+  background: var(--card-warm);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* 表格不撑破卡片：超宽表滚动条出在内容容器上（表格天然最小宽 > 卡片宽时才有滚动条；
+ * 行内公式图等既有 200px 档在容器的正常宽度下不受影响）。 */
+.question-content,
+.q-stem,
+.m-stem {
+  overflow-x: auto;
+}
+
+/* ===== 0013：选项版式三态题卡镜像（与 paper.css 同文同步；题卡侧不输出 ol- 类，规则惰性） =====
+ * 全部严格子选择器（防 KaTeX 内部 span 误伤）；若未来题卡侧按生效档输出类名，观感与卷面一致。 */
+.options {
+  break-inside: avoid;
+}
+
+.ol-single .options {
+  display: flex;
+  gap: 1.2em;
+}
+
+.ol-single .options > .option {
+  display: block;
+  flex: 1 1 0;
+  padding-left: 0;
+}
+
+.ol-two .options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: 1.2em;
+}
+
+.ol-two .options > .option {
+  display: block;
+  padding-left: 0;
+}
+
+/* 0014 目检返工：题库题卡列表铺满右栏容器（参照学科网式自适应窗口；0004-fix-1c 的 700px
+ * 纸面版心限宽随两栏改版退役——宽屏右侧留白过大且与「适应窗口」目检要求冲突）。
+ * 图片观感由块图 min(48%,240px)/行内 200px 独立保证，不再依赖列宽。
+ * BankBrowser 题卡列表 ul 挂此类：#/bank 管理模式与 pick 弹层同享。 */
+.bank-question-list {
+  width: 100%;
+}
+
+/* KaTeX 渲染（与 proof 页同款字号） */
+.question-content .katex,
+.question .katex {
+  font-size: 1.05em;
+}
+
+/* ===== 0003 错题红黄绿语义（U2：红=当前错题 / 黄=订正做对过一次 / 绿=已掌握；手动绿不自动降） =====
+ * 0010 三主题落地：色值改接 theme.css 的 --st-* 变量（三主题各配高区分度三态色 + 浅底光晕），
+ * 结构与特异性保留（hard constraint：错题三态任一主题下一眼可分） */
+.stage-lamp {
+  display: inline-block;
+  width: 0.8em;
+  height: 0.8em;
+  border-radius: 50%;
+  vertical-align: -0.05em;
+  margin-right: 0.35em;
+}
+
+.stage-lamp.red {
+  background: var(--st-red);
+  box-shadow: 0 0 0 3px var(--st-red-bg);
+}
+
+.stage-lamp.yellow {
+  background: var(--st-yellow);
+  box-shadow: 0 0 0 3px var(--st-yellow-bg);
+}
+
+.stage-lamp.green {
+  background: var(--st-green);
+  box-shadow: 0 0 0 3px var(--st-green-bg);
+}

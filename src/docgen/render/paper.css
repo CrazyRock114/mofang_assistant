@@ -1,0 +1,351 @@
+/* Phase 1: 试卷皮肤 CSS — A4、页边距、黑白打印友好
+   0004 Phase 4（乙路）「基础 + 变量化」重构：
+   - :root 版式变量（默认值 = 历史基线）；config 驱动时由渲染入口注入同名变量覆盖
+   - config 驱动的结构类规则不进本文件（本文件整体内联进渲染产物，避免污染基线）；
+     值驱动项（@page/字号/页边距等）由渲染入口的增量 <style> 按 config 覆盖 */
+
+:root {
+  --mf-font-size: 12pt;
+  --mf-line-height: 1.8;
+  --mf-question-line-height: 2;
+  --mf-font-family: 'SimSun', 'STSong', serif;
+}
+
+@page {
+  size: A4;
+  margin: 20mm 15mm;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: var(--mf-font-family);
+  font-size: var(--mf-font-size);
+  line-height: var(--mf-line-height);
+  color: #000;
+  background: #fff;
+}
+
+.paper {
+  max-width: 210mm;
+  margin: 0 auto;
+  padding: 0;
+}
+
+.paper-header {
+  text-align: center;
+  margin-bottom: 2em;
+  border-bottom: 2px solid #000;
+  padding-bottom: 1em;
+}
+
+.paper-title {
+  font-size: 18pt;
+  font-weight: bold;
+  margin: 0 0 0.5em 0;
+}
+
+.paper-meta {
+  font-size: 11pt;
+  color: #333;
+}
+
+.paper-meta > span {
+  margin: 0 1em;
+}
+
+/* 0009：卷头多行自定义基础行距（字号/对齐/加粗在内联样式——此处不写死字号） */
+.paper-header-line {
+  line-height: 1.4;
+  margin: 0 0 0.3em 0;
+}
+
+.paper-header-line:last-child {
+  margin-bottom: 0;
+}
+
+.paper-questions {
+  margin-bottom: 3em;
+}
+
+.question-item {
+  margin-bottom: 1.5em;
+  /* 0004-fix-3 P0-3（目检 #4 首页空白根因②）：题级整块避免分页规则收窄移除——
+     首题≈页高时整题被推到第二页留下空白首页；用户拍板「题目允许跨页」。
+     小块级避免规则保留（图块/作答区/公式容器各自单独声明） */
+  /* 0004-fix-4 #5：题号 header 以 float 参与本题排版 → 本题建立 BFC，把浮动关在题内 */
+  display: flow-root;
+}
+
+.question-header {
+  float: left;
+  margin: 0 0.5em 0 0;
+  /* fix-4 #5：与题干同行（浮动题号）；宽度自适应题号/分值，不写死缩进 */
+  /* fix-4 #5：浮动题号无独立行下边距 */
+}
+
+/* 0004-fix-4 #5（目检 #5「题号下一行而非同行」）：题号与题干同起。
+   机制 = .question-header 浮动在题体左侧（宽度自适应题号/分值文本，不写死缩进量），
+   .mf-question-body 建立 BFC 整体避开该浮动 → 题干首行紧接题号，
+   题干续行/选项/答案/解析与首行文字左缘对齐（悬挂缩进）；单列/双列/学生教师版一致。
+   .question-header:empty = 无题号且无分值（显隐位关闭）时不浮动，避免白白缩进。 */
+.question-header:empty {
+  display: none;
+}
+
+.mf-question-body {
+  display: flow-root;
+}
+
+/* 0004-fix-4 2.3（大标题=文本内容块）：kind='text' 行渲染为节标题/备注块。
+   复用 .question-item 顶层块（分页装箱/拖序/克隆同机制），但不含题号/分值/作答区。 */
+.mf-text-item {
+  text-align: center;
+  font-weight: bold;
+  font-size: 1.15em;
+  margin: 1.2em 0 0.8em;
+}
+
+.mf-text-item--note {
+  text-align: left;
+  font-weight: normal;
+  font-size: 1em;
+}
+
+/* 0004-fix-6 P1-1：文本块显式对齐（左/中/右）——覆盖样式基线观感；缺省（无类）保持基线 */
+.mf-text-item--align-left { text-align: left; }
+.mf-text-item--align-center { text-align: center; }
+.mf-text-item--align-right { text-align: right; }
+
+.mf-text-body {
+  line-height: 1.5;
+}
+
+.question-number {
+  font-weight: bold;
+  margin-right: 0.5em;
+}
+
+.question-score {
+  font-size: 10pt;
+  color: #666;
+  margin-left: 0.5em;
+}
+
+.question-content {
+  /* fix-4 #5：缩进由 .mf-question-body 避开浮动承担（悬挂缩进，续行对齐首行文字） */
+  line-height: var(--mf-question-line-height);
+}
+
+/* 使用子选择器防止选中 KaTeX 内部元素 */
+.question-content > .question {
+  margin: 0;
+}
+
+.question-content > .question > .options {
+  margin-top: 0.5em;
+}
+
+.question-content > .question > .options > .option {
+  display: block;
+  margin: 0.3em 0;
+  padding-left: 1em;
+}
+
+/* ===== 0052（R-050）：题号与题面同行 —— 首块顶边距归零 =====
+   fix-4 #5 的悬挂缩进靠 .mf-question-body（flow-root）挡住子元素外边距折出；
+   首块自带顶外边距时（识别链/编辑器链题干 = <p> 的 UA 1em；figure 1em；0050 起 table 0.6em），
+   外边距折不出题体 → 首行被整块顶到题号下一行（0041 目检通过版只覆盖采集链裸文本 → 未被抓到）。
+   归零首块顶边距 = 首行回到题体顶端与题号同起；续行/选项的悬挂缩进与题内间距全不变。
+   本段位置有意排在 .options 规则之后：与该规则同为 (0,3,0)，靠源序拿下「首块即选项容器」的情形。
+   末两条覆盖交互预览：.mf-seg 段边界标记（绝对定位不占流）占住 :first-child 位时，
+   首块是其后的兄弟——不显式命中则排版间预览仍不同行。 */
+.question-content > :first-child,
+.question-content > .question > :first-child,
+.question-content > .mf-seg:first-child + *,
+.question-content > .question > .mf-seg:first-child + * {
+  margin-top: 0;
+}
+
+/* ===== 0013：选项版式三态（auto 竖排不加类 / ol-single 单行均分 / ol-two 两行均分） =====
+   类只在题容器（.question-item）按生效档输出（题级覆盖 ?? 卷级 ?? auto），缺省输出逐字节零回归。
+   全部严格子选择器（架构 §9.1 ④：防 KaTeX 内部 span 崩坏）；auto 缺省下规则在而类不在 → 惰性零回归。
+   末两条用 4 类特异性压过上方基线悬挂缩进（padding-left:1em）——同特异性本段在后即胜。 */
+.options {
+  break-inside: avoid;
+}
+
+.ol-single .options {
+  display: flex;
+  gap: 1.2em;
+}
+
+.ol-single .options > .option {
+  display: block;
+  flex: 1 1 0;
+  padding-left: 0;
+}
+
+.ol-two .options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: 1.2em;
+}
+
+.ol-two .options > .option {
+  display: block;
+  padding-left: 0;
+}
+
+.question-item.ol-single .options > .option {
+  padding-left: 0;
+}
+
+.question-item.ol-two .options > .option {
+  padding-left: 0;
+}
+
+.question-content figure {
+  margin: 1em 0;
+  text-align: center;
+  break-inside: avoid;
+}
+
+/* 块级图宽度由 figure 内联样式驱动（processFigures：width 原像素 + max-width:60% 默认观感档，0004 S4）；
+   img 层放开到 100%（相对已封顶的 figure），避免与 figure 级百分比复利导致实际收敛低于 60% 档。
+   .inline-figure 是 span 不受影响 */
+.question-content figure > img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* 未知尺寸图（data-w="0"，无内联样式）：无原像素宽可依，按默认观感档 60% 版心封顶
+   （特异性高于上规则，仅命中无 style 属性的 figure；0004 S4 由 80% 演进） */
+.question-content figure:not([style]) > img {
+  max-width: 60%;
+}
+
+/* ===== 0050（R-037 第①步）：纸面表格（识别链 markdown 表格 → 契约 <table>；近印刷样） =====
+   实线细边框 + 表头加粗浅底；满版心定宽（table-layout:fixed）为「A4 版心内不溢出」的硬约束取舍，
+   列宽随首行均分（内容自适应列为增强项，见 0050 交付报告「记档」）；行不跨页切割、表可跨页
+   （与 0004-fix-3 P0-3「题目允许跨页」同口径：整表硬留会留出空白页）。
+   纸面属内容物：固定近白底，不随三主题（paper-sheet 硬约束不变）——故此段用实色不用 token。 */
+.question-content table,
+.answer-field table,
+.analysis-field table {
+  border-collapse: collapse;
+  width: 100%;
+  max-width: 100%;
+  margin: 0.6em 0;
+  table-layout: fixed;
+  font-size: 0.95em;
+  line-height: 1.4;
+}
+
+.question-content table th,
+.question-content table td,
+.answer-field table th,
+.answer-field table td,
+.analysis-field table th,
+.analysis-field table td {
+  border: 1px solid #000;
+  padding: 0.2em 0.4em;
+  vertical-align: top;
+  text-align: left;
+  word-break: break-word;
+}
+
+.question-content table th,
+.answer-field table th,
+.analysis-field table th {
+  font-weight: bold;
+  background: #f2f2f2;
+}
+
+.question-content table tr,
+.answer-field table tr,
+.analysis-field table tr {
+  break-inside: avoid;
+}
+
+/* 单元格内的块级/裸图相对单元格限宽（.inline-figure > img 的 200px 档不受影响：
+   包裹形态是 td > span > img，本选择器只命中直接落在格里的 img） */
+.question-content table td > img,
+.question-content table th > img,
+.answer-field table td > img,
+.analysis-field table td > img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* 教师版答案/解析字段在 .question-content 之外，需同规则限宽
+   （D1-fix-2 实站复验：zujuan 答案图为 1768px 宽整图，无约束会按原尺寸铺开；
+   D1-fix-3 J-2/J-3：封顶 80%） */
+.answer-field figure > img,
+.analysis-field figure > img,
+.answer-field img,
+.analysis-field img {
+  max-width: 80%;
+  height: auto;
+}
+
+/* D1-fix R-5：行内公式/符号小图（采集题 ≤80px），留在文字流中不折断 */
+.inline-figure {
+  display: inline-block;
+  vertical-align: middle;
+  margin: 0 0.1em;
+  line-height: 1;
+}
+
+/* D1-fix-3 J-4：补 vertical-align（与 app.css 对齐），行内公式图基线居中 */
+/* 0041（2026-09-18 用户目检拍板「题库/排版对齐试题篮采集预览」）：取消 0010-merge P5 的
+ * 1.25×字号下限放大。依据：采集预览渲染的是**未归一化**的原始站点 HTML（裸 img → 内在尺寸），
+ * 题库/排版走 .inline-figure 契约、曾被下限档抬到 20px——真机三方实测（logs/0041-align-capture.json）：
+ * 同一批真库行内图 采集预览 5×11 / 57×12 / 76×15 vs 题库与排版 9.08×20 / 95×20 / 101.33×20
+ * （墨迹高 16.7-18.7px vs 正文 12pt≈15px）→ 观感偏大。现行按**内在尺寸**出图（= 原站观感）。
+ * width:auto!important 保留：覆盖 processFigures 写的 data-w 内联宽（防存量脏数据）；
+ * max-width 200px 封顶保留（采集侧行内图 ≤200px，规则惰性兜底）。 */
+.inline-figure > img {
+  height: auto;
+  width: auto !important;
+  max-width: 200px;
+  vertical-align: middle;
+}
+
+.answer-field,
+.analysis-field {
+  margin: 0.5em 0 0 0;
+  font-size: 11pt;
+  line-height: 1.6;
+}
+
+.paper-footer {
+  text-align: center;
+  font-size: 10pt;
+  color: #666;
+  margin-top: 2em;
+  padding-top: 1em;
+  border-top: 1px solid #ccc;
+}
+
+/* ===== 0004 Phase 4 说明 =====
+   config 驱动的结构类规则（题内双栏/图块序列/作答区/页角徽标）不放基础层——
+   本文件会被整体内联进渲染产物，结构类留在基础层会污染基线输出；
+   由渲染入口按 config 注入（见 layout.ts buildLayoutCss），基线路径零注入、零回归。 */
+
+/* 0004-fix-3 P0-3（目检 #4）：公式防跨页——KaTeX 公式容器整体避免分页切割
+   （display 块与行内公式同治：.katex-display 是块级容器，.katex 行内块生效于 inline-block 盒） */
+.katex-display {
+  break-inside: avoid;
+}
+
+.katex {
+  break-inside: avoid;
+}
+
+/* 打印优化 */
+@media print {
+  body {
+    background: none;
+  }
+}

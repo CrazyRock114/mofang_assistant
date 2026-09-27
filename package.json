@@ -1,0 +1,120 @@
+{
+  "name": "mofang-assistant",
+  "version": "1.0.0",
+  "description": "魔方助教 — Windows 桌面单机教师工作台",
+  "main": "dist/shell/main.js",
+  "scripts": {
+    "build:renderer": "vite build",
+    "build:main": "tsc -p tsconfig.main.json",
+    "build:capture-inject": "node scripts/build-capture-inject.mjs",
+    "build": "npm run build:renderer && npm run build:main && npm run build:capture-inject",
+    "test": "vitest run",
+    "start": "electron .",
+    "smoke": "node scripts/smoke.mjs",
+    "smoke:pdf": "node scripts/smoke-pdf.mjs",
+    "gate": "tsc -p tsconfig.main.json --noEmit && tsc -p tsconfig.renderer.json --noEmit && npm run build:capture-inject && npm test && npm run build && npm run smoke",
+    "dist:win": "npm run build && electron-builder --win",
+    "pack": "electron-builder --dir"
+  },
+  "build": {
+    "appId": "com.mofang.assistant",
+    "productName": "魔方助教",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "package.json",
+      "dist/**/*",
+      "build/**/*",
+      "src/bank/migrations/**",
+      "!**/*.md",
+      "!**/*.map",
+      "!**/node_modules/**/*",
+      "node_modules/katex/dist/**/*",
+      "node_modules/katex/package.json",
+      "!node_modules/katex/dist/**/*.md",
+      "node_modules/docx/dist/**/*",
+      "node_modules/docx/package.json",
+      "node_modules/electron-updater/**/*",
+      "node_modules/electron-updater/package.json",
+      "node_modules/builder-util-runtime/**/*",
+      "node_modules/builder-util-runtime/package.json",
+      "node_modules/fs-extra/**/*",
+      "node_modules/fs-extra/package.json",
+      "node_modules/graceful-fs/**/*",
+      "node_modules/graceful-fs/package.json",
+      "node_modules/jsonfile/**/*",
+      "node_modules/jsonfile/package.json",
+      "node_modules/universalify/**/*",
+      "node_modules/universalify/package.json",
+      "node_modules/js-yaml/**/*",
+      "node_modules/js-yaml/package.json",
+      "node_modules/argparse/**/*",
+      "node_modules/argparse/package.json",
+      "node_modules/lazy-val/**/*",
+      "node_modules/lazy-val/package.json",
+      "node_modules/lodash.escaperegexp/**/*",
+      "node_modules/lodash.escaperegexp/package.json",
+      "node_modules/lodash.isequal/**/*",
+      "node_modules/lodash.isequal/package.json",
+      "node_modules/semver/**/*",
+      "node_modules/semver/package.json",
+      "node_modules/tiny-typed-emitter/**/*",
+      "node_modules/tiny-typed-emitter/package.json",
+      "node_modules/debug/**/*",
+      "node_modules/debug/package.json",
+      "node_modules/ms/**/*",
+      "node_modules/ms/package.json",
+      "node_modules/sax/**/*",
+      "node_modules/sax/package.json"
+    ],
+    "win": {
+      "icon": "build/icon.png",
+      "target": [
+        "nsis",
+        "portable"
+      ]
+    },
+    "nsis": {
+      "language": "2052",
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "artifactName": "mofang-assistant-setup-${version}.${ext}"
+    },
+    "portable": {
+      "artifactName": "mofang-assistant-portable-${version}.${ext}"
+    }
+  },
+  "dependencies": {
+    "@tiptap/core": "^3.31.2",
+    "@tiptap/extension-table": "^3.31.2",
+    "@tiptap/pm": "^3.31.2",
+    "@tiptap/react": "^3.31.2",
+    "@tiptap/starter-kit": "^3.31.2",
+    "docx": "^9.7.1",
+    "electron-updater": "^6.8.9",
+    "katex": "^0.16.47",
+    "mathlive": "^0.107.1",
+    "pdfjs-dist": "^4.10.38",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
+  },
+  "devDependencies": {
+    "@types/jsdom": "^30.0.0",
+    "@types/node": "^26.4.1",
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
+    "@vitejs/plugin-react": "^5.0.0",
+    "electron": "^38.0.0",
+    "electron-builder": "^26.15.3",
+    "happy-dom": "^20.13.2",
+    "jsdom": "^29.1.1",
+    "typescript": "^5.9.0",
+    "vite": "^7.1.0",
+    "vitest": "^3.2.0"
+  },
+  "license": "CC-BY-NC-SA-4.0"
+}

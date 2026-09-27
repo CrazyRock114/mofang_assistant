@@ -1,0 +1,14 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "module": "CommonJS",
+    "moduleResolution": "node",
+    "noEmit": false,
+    "outDir": "dist",
+    "rootDir": "src",
+    "sourceMap": true,
+    "types": ["node"],
+    "lib": ["ES2022"]
+  },
+  "include": ["src/shell", "src/shared", "src/bank", "src/recog", "src/capture", "src/docgen/render/buildPaperHtml.ts", "src/docgen/render/buildPaperHtml.core.ts", "src/docgen/export"]
+}

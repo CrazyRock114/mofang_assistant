@@ -1,0 +1,293 @@
+/* 0040：录题工作台样式（入口页 + 工作台）。
+ *
+ * 落地口径：`recog-workbench-v2 设计稿`（v4 冻结稿）的私有类名**不能直接照抄**
+ * （那份内联样式是讨论稿私有的，全局无对应规则），故本文件按设计稿的视觉参数用 `wb-` 前缀重建，
+ * 颜色/圆角/阴影一律取 theme.css 的主题变量（暖纸/浅色/深色三主题自动跟随，不写死色值）。
+ */
+
+/* ==================== 通用 ==================== */
+.wb-page { color: var(--ink); }
+.wb-muted { color: var(--ink-3); }
+.wb-mini { font-size: 11.5px; }
+.wb-sp { flex: 1; }
+.wb-link {
+  border: none; background: none; color: var(--orange-deep, var(--accent));
+  cursor: pointer; font: inherit; padding: 0 2px; text-decoration: underline dotted;
+}
+.wb-select {
+  border: 1px solid var(--line); border-radius: 8px; padding: 4px 8px;
+  background: var(--card-warm, var(--card)); font-family: inherit; color: var(--ink);
+}
+
+/* ==================== 入口页（视图一） ==================== */
+.wb-entry { max-width: 1240px; margin: 0 auto; padding: 4px 4px 48px; }
+.wb-entry-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin: 8px 0 20px; }
+.wb-entry-title { font-size: 24px; margin: 0; }
+.wb-entry-sub { color: var(--ink-2); font-size: 13px; margin-top: 6px; }
+.wb-stage-pick {
+  display: flex; gap: 8px; align-items: center; background: var(--card);
+  border: 1px solid var(--line); border-radius: 10px; padding: 8px 14px; font-size: 13px;
+  box-shadow: var(--shadow-card);
+}
+/* 0053：入口收敛后 wb-entry-cards / wb-entry-card / wb-entry-hint / wb-modes / wb-tagline 已零引用删除（两卡撤下） */
+.wb-drop-strip {
+  margin-top: 14px; border: 2px dashed var(--line-strong); border-radius: 14px; background: var(--card);
+  padding: 16px 22px; text-align: center; font-size: 13px; color: var(--ink-2); cursor: pointer;
+}
+.wb-drop-strip:hover, .wb-drop-strip.active { border-color: var(--orange, var(--accent)); }
+.wb-drop-strip kbd { background: var(--paper-deep); border: 1px solid var(--line); border-radius: 5px; padding: 1px 6px; font-size: 12px; }
+.wb-runs { margin-top: 28px; }
+.wb-runs h2 { font-size: 15px; margin: 0 0 10px; color: var(--ink-2); }
+.wb-run-row {
+  display: flex; align-items: center; gap: 14px; background: var(--card); border: 1px solid var(--line);
+  border-radius: 10px; padding: 10px 16px; margin-bottom: 8px; font-size: 13px;
+}
+.wb-run-name { font-weight: 600; }
+.wb-run-meta { color: var(--ink-3); font-size: 12px; }
+.wb-st-pill { border-radius: 999px; padding: 2px 10px; font-size: 11.5px; }
+.wb-st-pill.done { background: var(--st-green-bg); color: var(--st-green); }
+.wb-st-pill.part { background: var(--st-yellow-bg); color: var(--st-yellow); }
+.wb-st-pill.bad { background: var(--st-red-bg); color: var(--st-red); }
+
+/* ==================== 工作台（视图二/三） ==================== */
+.wb-top {
+  display: flex; align-items: center; gap: 12px; padding: 12px 28px 10px;
+  max-width: 1360px; margin: 0 auto; position: relative;
+}
+.wb-back { color: var(--ink-2); font-size: 13px; cursor: pointer; text-decoration: none; }
+.wb-back:hover { color: var(--orange-deep, var(--accent)); }
+.wb-title { font-size: 17px; margin: 0; }
+.wb-mode-pill { border-radius: 999px; padding: 3px 12px; font-size: 12px; background: var(--green-soft, var(--paper-deep)); color: var(--green-deep, var(--green-ink)); }
+.wb-page.semi .wb-mode-pill { background: var(--st-yellow-bg); color: var(--st-yellow); }
+/* 返工⑥：工作台内的默认归类（学段/学科）——挂树建议与入库都取这里的定格 */
+.wb-classify { display: flex; align-items: center; gap: 6px; }
+.wb-classify .wb-select { font-size: 12.5px; }
+.wb-set-pop {
+  position: absolute; right: 28px; top: 46px; z-index: 40; width: 340px; background: var(--card);
+  border: 1px solid var(--line-strong); border-radius: 14px; box-shadow: var(--shadow-pop); padding: 16px 18px; font-size: 13px;
+}
+.wb-set-pop h4 { font-size: 13.5px; margin: 0 0 10px; }
+.wb-set-pop label {
+  display: flex; gap: 8px; align-items: flex-start; padding: 8px 10px; border: 1px solid var(--line);
+  border-radius: 10px; margin-bottom: 8px; cursor: pointer; line-height: 1.6;
+}
+.wb-set-pop label.on { border-color: var(--orange, var(--accent)); background: var(--orange-soft, var(--paper-deep)); }
+.wb-set-pop label input { margin-top: 3px; accent-color: var(--orange, var(--accent)); }
+.wb-set-pop .wb-d { color: var(--ink-3); font-size: 12px; }
+.wb-set-foot { font-size: 11.5px; color: var(--ink-3); border-top: 1px dashed var(--line); padding-top: 8px; }
+.wb-semi-banner {
+  max-width: 1304px; margin: 0 auto 10px; background: var(--st-yellow-bg); border: 1px solid var(--st-yellow);
+  color: var(--ink-2); border-radius: 10px; padding: 9px 14px; font-size: 12.5px; line-height: 1.7;
+}
+.wb-main {
+  display: grid; grid-template-columns: 6fr 7fr; gap: 16px; max-width: 1360px; margin: 0 auto;
+  padding: 0 28px; height: calc(100vh - 148px);
+}
+.wb-col { overflow-y: auto; min-height: 0; padding-bottom: 24px; }
+
+/* ---------- 左栏：原文件预览 ---------- */
+/* 2026-09-20 目检返工①：左栏拆两层——工具栏是面板的固定头，只有页图区滚动。
+   原先整列（.wb-col）滚动靠 sticky 顶住工具栏，一拖滚动条就带着缩放控件跑。 */
+.wb-src-col { display: flex; flex-direction: column; min-height: 0; overflow: hidden; padding-bottom: 0; }
+.wb-src-panel {
+  display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0;
+  background: var(--card); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow-card);
+}
+.wb-src-tools {
+  flex: 0 0 auto; display: flex; align-items: center; gap: 8px;
+  padding: 9px 12px; background: var(--card); border-bottom: 1px solid var(--line);
+  border-radius: 14px 14px 0 0; font-size: 12.5px; color: var(--ink-2);
+}
+.wb-zbtn { border: 1px solid var(--line); background: var(--card-warm, var(--card)); border-radius: 7px; padding: 2px 10px; font-size: 13px; cursor: pointer; color: inherit; }
+.wb-zval { min-width: 44px; text-align: center; font-variant-numeric: tabular-nums; }
+.wb-frame-toggle {
+  border: 1px solid var(--line-strong); background: var(--card-warm, var(--card)); border-radius: 8px;
+  padding: 4px 12px; font-size: 12.5px; cursor: pointer; color: var(--ink-2);
+}
+.wb-frame-toggle.on { background: var(--green-ink); border-color: var(--green-ink); color: #fff; }
+/* 页图区 = 唯一滚动容器（纵向翻页；放大后横向也能拖） */
+.wb-src-pages { flex: 1 1 auto; min-height: 0; padding: 14px; overflow: auto; }
+.wb-src-page {
+  position: relative; margin: 0 auto 16px; border: 1px solid var(--line); border-radius: 6px;
+  background: #fff; overflow: hidden;
+}
+.wb-src-page.framing { cursor: crosshair; }
+.wb-src-img { display: block; width: 100%; height: 100%; }
+.wb-src-placeholder { display: flex; align-items: center; justify-content: center; height: 240px; color: var(--ink-3); font-size: 12.5px; }
+.wb-pgno { position: absolute; bottom: 8px; right: 12px; color: #bbb; font-size: 11px; }
+
+.wb-fig-box { position: absolute; border: 2px solid var(--orange, var(--accent)); background: rgba(232, 115, 74, .08); border-radius: 6px; }
+.wb-fig-box .wb-fb-tag {
+  position: absolute; top: -11px; left: -2px; background: var(--orange, var(--accent)); color: #fff;
+  font-size: 10.5px; border-radius: 4px; padding: 1px 7px; white-space: nowrap;
+}
+.wb-fig-box.pending { border-color: var(--gold, var(--st-yellow)); background: rgba(217, 178, 95, .10); }
+.wb-fig-box.pending .wb-fb-tag { background: var(--gold, var(--st-yellow)); }
+.wb-fig-box.attached { border-color: var(--green-ink); border-style: solid; background: rgba(62, 107, 82, .07); }
+.wb-fig-box.attached .wb-fb-tag { background: var(--green-ink); }
+.wb-fig-box.manual { border-color: var(--green-ink); border-style: dashed; background: rgba(62, 107, 82, .07); }
+.wb-fig-box.manual .wb-fb-tag { background: var(--green-ink); }
+.wb-fig-box.adjusted .wb-fb-tag { background: var(--green-deep, var(--green-ink)); }
+.wb-fb-act { position: absolute; bottom: -30px; left: -2px; display: flex; gap: 6px; z-index: 5; flex-wrap: wrap; max-width: 420px; }
+.wb-fb-act button {
+  border: 1px solid var(--green-ink); background: #fff; color: var(--green-deep, var(--green-ink));
+  border-radius: 7px; padding: 2px 10px; font-size: 11.5px; cursor: pointer; white-space: nowrap;
+}
+.wb-fb-handle {
+  position: absolute; right: -6px; bottom: -6px; width: 12px; height: 12px; background: #fff;
+  border: 2px solid var(--orange, var(--accent)); border-radius: 3px; cursor: nwse-resize;
+}
+
+/* ==================== 0046：打磨包样式（读条统一/黄条按钮/图块闪烁/顶栏段式） ==================== */
+/* 顶栏段式（P2 + 目检返工③：AI 一键移左栏工具条后为两段——左=导航，右=归类+保存态+识别模式） */
+.wb-top-left { display: flex; align-items: center; gap: 12px; min-width: 0; flex: 1 1 0; }
+.wb-top-right { display: flex; align-items: center; gap: 10px; flex: 1 1 0; justify-content: flex-end; }
+/* 识别模式按钮内的档位 pill（原独立 pill 收编进按钮，testid 保留） */
+.wb-top-right .wb-mode-pill { margin: 0 2px; }
+
+/* 黄条「去处理」按钮（P3；设计稿 .q-warn .fix 视觉参数：金边透明底） */
+.wb-q-warn { display: flex; align-items: center; gap: 8px; }
+.wb-q-warn-text { flex: 1 1 auto; }
+.wb-warn-fix {
+  margin-left: auto; flex: 0 0 auto;
+  border: 1px solid var(--gold, var(--st-yellow)); background: transparent; color: var(--gold-text, var(--ink-2));
+  border-radius: 7px; padding: 2px 10px; font-size: 11.5px; cursor: pointer; white-space: nowrap;
+}
+.wb-warn-fix:hover { background: var(--note-yellow, var(--st-yellow-bg)); }
+
+/* 图块/页框定位闪烁（P3：黄条「去处理」跳转后的视觉锚点） */
+@keyframes wb-fig-flash {
+  0%, 100% { box-shadow: none; }
+  50% { box-shadow: 0 0 0 6px rgba(232, 115, 74, .5); }
+}
+.wb-fig-flash { animation: wb-fig-flash .5s ease-in-out 3; z-index: 6; }
+
+/* 「最近识别记录」行内窄版读条（P1.5：后台转写在跑的 run） */
+.wb-run-prog {
+  display: inline-flex; align-items: center; gap: 8px; font-size: 11.5px; color: var(--ink-3);
+}
+.wb-run-prog .progress-track { flex: 0 0 72px; height: 6px; }
+.wb-run-prog .progress-track i { background: var(--gold, var(--st-yellow)); }
+
+/* ---------- 右栏：题卡流 ---------- */
+.wb-cards-tools {
+  position: sticky; top: 0; z-index: 10; display: flex; align-items: center; gap: 12px;
+  background: var(--paper, var(--card)); padding: 4px 2px 10px; font-size: 13px;
+}
+.wb-cards-tools input[type=checkbox] { width: 15px; height: 15px; accent-color: var(--orange, var(--accent)); cursor: pointer; }
+.wb-cnt { font-weight: 700; color: var(--orange-deep, var(--accent)); }
+.wb-empty { background: var(--card); border: 1px dashed var(--line-strong); border-radius: 12px; padding: 18px; font-size: 13px; color: var(--ink-2); line-height: 1.9; }
+
+.wb-qcard { background: var(--card); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow-card); margin-bottom: 6px; }
+.wb-qcard.checked { border-color: var(--orange, var(--accent)); box-shadow: 0 0 0 3px rgba(232, 115, 74, .15), var(--shadow-card); }
+.wb-qcard.committed { border-color: var(--st-green); background: var(--st-green-bg); }
+.wb-qcard.committed .wb-q-body, .wb-qcard.committed .wb-ai-zone { opacity: .55; pointer-events: none; }
+.wb-qcard.pending { border: 1.5px dashed var(--green-ink); }
+.wb-qcard.failed { border: 1.5px solid var(--st-red); }
+.wb-q-head { display: flex; align-items: center; gap: 10px; padding: 10px 16px; border-bottom: 1px dashed var(--line); }
+.wb-q-head input[type=checkbox] { width: 16px; height: 16px; accent-color: var(--orange, var(--accent)); cursor: pointer; }
+.wb-q-no { font-weight: 700; font-size: 14.5px; }
+.wb-q-type { border: 1px solid var(--line); border-radius: 8px; padding: 3px 8px; font-size: 12px; background: var(--card-warm, var(--card)); color: var(--ink-2); font-family: inherit; }
+.wb-mini-btn { border: none; background: transparent; color: var(--ink-3); font-size: 12px; cursor: pointer; padding: 3px 8px; border-radius: 7px; }
+.wb-mini-btn:hover { background: var(--paper-deep); color: var(--ink); }
+.wb-q-err { margin: 10px 16px 0; background: var(--st-red-bg); border-left: 3px solid var(--st-red); border-radius: 0 8px 8px 0; padding: 7px 12px; font-size: 12.5px; color: var(--st-red); }
+.wb-q-warn { margin: 10px 16px 0; background: var(--note-yellow, var(--st-yellow-bg)); border-left: 3px solid var(--gold, var(--st-yellow)); border-radius: 0 8px 8px 0; padding: 7px 12px; font-size: 12.5px; color: var(--gold-text, var(--ink-2)); }
+/* 0046 P1.1：单卡识别读条换统一 progress-shell（theme.css），自造条 .wb-prog/.wb-prog-note/@keyframes wb-slide 删除 */
+.wb-q-body { padding: 12px 16px 6px; }
+.wb-sec-label { font-size: 11px; color: var(--ink-3); letter-spacing: 1px; margin: 10px 0 4px; }
+.wb-wysiwyg { border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--card); }
+
+/* 2026-09-20 目检返工④：题卡编辑器内的选项逐行显示。
+   病因与题库页 fix-1b 同型——结构化选项是 `.options > span.option`（行内 span），
+   产品只加载 app.css/workbench.css，而把选项排成行的规则住在 demo.css（demo 专用，产品不加载），
+   于是多选项挤成一行，看着和「纯文本」没区别。口径与 app.css 的 `.question-content .options .option` 对齐。 */
+.wb-wysiwyg .options {
+  display: flex; flex-direction: column; gap: 4px; margin: 6px 0;
+}
+.wb-wysiwyg .options > .option {
+  display: block; padding: 3px 8px; border: 1px solid var(--line);
+  border-radius: 6px; background: var(--card-warm, var(--card));
+}
+/* 图块：按原图比例显示（编辑器 NodeView 会写死行内 width/height，
+   若尺寸口径不对就会把图压扁——见 2026-09-20 目检返工①） */
+.wb-wysiwyg figure.diagram { max-width: 100%; }
+.wb-wysiwyg figure.diagram img.q-figure { max-width: 100%; height: auto !important; }
+.wb-ans-toggle { border: none; background: transparent; color: var(--ink-3); font-size: 12px; cursor: pointer; padding: 6px 10px; }
+.wb-ans-area { padding-bottom: 6px; }
+.wb-pend-thumbs { display: flex; gap: 8px; flex-wrap: wrap; }
+.wb-pend-thumb {
+  min-width: 124px; min-height: 62px; border-radius: 8px; padding: 6px 8px; cursor: zoom-in;
+  background: repeating-linear-gradient(45deg, #eef4ee, #eef4ee 8px, #dde9dd 8px, #dde9dd 16px);
+  border: 1px solid var(--green-ink); color: var(--green-deep, var(--green-ink)); font-size: 11.5px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+}
+.wb-pend-act { display: flex; gap: 10px; align-items: center; padding: 10px 16px 12px; }
+
+/* AI 建议区 */
+.wb-ai-zone { margin: 10px 16px 4px; background: var(--card-warm, var(--card)); border: 1px solid var(--line); border-radius: 10px; padding: 10px 14px; }
+.wb-az-title { font-size: 11.5px; color: var(--ink-3); margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+.wb-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--orange, var(--accent)); display: inline-block; }
+.wb-ai-row { display: flex; align-items: center; flex-wrap: wrap; gap: 7px; margin-bottom: 7px; font-size: 12.5px; }
+.wb-rl { color: var(--ink-3); font-size: 11.5px; width: 56px; }
+.wb-chip { display: inline-flex; align-items: center; gap: 4px; border-radius: 999px; padding: 3px 10px; font-size: 12px; cursor: pointer; font-family: inherit; }
+.wb-chip-tag { border: 1.5px dashed var(--orange, var(--accent)); color: var(--orange-deep, var(--accent)); background: transparent; }
+.wb-chip-tag.ok { border-style: solid; background: var(--orange, var(--accent)); color: #fff; }
+.wb-chip-tree { border: 1.5px dashed var(--green-ink); color: var(--green-deep, var(--green-ink)); background: transparent; }
+.wb-chip-tree.ok { border-style: solid; background: var(--green-ink); color: #fff; }
+.wb-chip-add { border: 1px dashed var(--line-strong); color: var(--ink-3); background: transparent; }
+.wb-chip-input { border: 1px dashed var(--line-strong); border-radius: 999px; padding: 2px 10px; font-size: 12px; background: transparent; color: var(--ink); width: 90px; }
+.wb-ai-note { font-size: 11px; color: var(--ink-3); margin-left: 4px; }
+
+.wb-q-foot { display: flex; align-items: center; gap: 10px; padding: 9px 16px 12px; }
+.wb-done-tag { color: var(--st-green); font-size: 12.5px; font-weight: 600; }
+.wb-seam { display: flex; align-items: center; gap: 10px; margin: 2px 0 8px; opacity: .45; }
+.wb-seam:hover { opacity: 1; }
+.wb-seam-line { flex: 1; border-top: 1px dashed var(--line-strong); }
+.wb-seam button { border: 1px solid var(--line-strong); background: var(--card); color: var(--ink-2); border-radius: 999px; padding: 2px 12px; font-size: 11.5px; cursor: pointer; }
+.wb-seam button:hover { border-color: var(--orange, var(--accent)); color: var(--orange-deep, var(--accent)); }
+
+/* 剪贴板条 / 灯箱 / 页脚 */
+.wb-clip-bar {
+  position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); z-index: 60;
+  display: flex; align-items: center; gap: 8px; background: var(--card); border: 1px solid var(--line-strong);
+  border-radius: 999px; box-shadow: var(--shadow-pop); padding: 6px 14px; font-size: 12.5px;
+}
+.wb-lb-mask { position: fixed; inset: 0; background: var(--mask); z-index: 100; display: flex; align-items: center; justify-content: center; cursor: zoom-out; }
+.wb-lb-box { width: min(760px, 80vw); max-height: 80vh; overflow: auto; background: var(--card); border-radius: 12px; padding: 14px; box-shadow: var(--shadow-pop); font-size: 13px; cursor: default; }
+/* 0053 目检返工：wb-foot-note（切题工作区入口页脚）随入口退役删除 */
+
+/* 挂树节点选择弹层（设计稿 tree-modal 的落地） */
+.wb-tm { display: flex; flex-direction: column; gap: 8px; width: 520px; max-width: 86vw; }
+.wb-tm-filters { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.wb-tm-muted { color: var(--ink-3); font-size: 12px; }
+.wb-tm-select, .wb-tm-search { border: 1px solid var(--line); border-radius: 8px; padding: 5px 10px; background: var(--card-warm, var(--card)); font-family: inherit; font-size: 13px; color: var(--ink); }
+.wb-tm-search { flex: 1; min-width: 90px; }
+.wb-tm-tree { max-height: 46vh; overflow-y: auto; padding: 6px 2px; font-size: 13.5px; }
+.wb-tm-cur { border-top: 1px dashed var(--line); padding-top: 8px; font-size: 12.5px; color: var(--ink-2); }
+.wb-tm-cur b { color: var(--green-deep, var(--green-ink)); }
+.wb-tm-foot { display: flex; justify-content: flex-end; gap: 10px; }
+
+/* 窄屏（窗口最小宽度下退化为单列，避免两栏挤成一条线） */
+@media (max-width: 1024px) {
+  .wb-main { grid-template-columns: 1fr; height: auto; }
+}
+
+/* ===== 0053（追加文件末尾，0018 口径）：录题入口收敛 ===== */
+/* 拖放条下方小字行：旧链 PDF 切题入口 + AI 配置深链 */
+.wb-entry-foot { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-top: 8px; font-size: 12px; color: var(--ink-3); }
+/* 识别记录翻页器（范式照 papers.css .pm-pager） */
+.wb-pager { display: flex; align-items: center; gap: 12px; justify-content: center; margin-top: 10px; }
+.wb-pager-info { font-size: 12px; color: var(--ink-3); }
+/* 0053 目检返工③补（定稿：弹窗「确定」一步完成入库+加篮）：批量条「加入试题篮」按钮开弹窗，
+   弹窗内选篮：＋新建（默认选中，命名输入框）/ 现有篮列表（max-height 内滚动、行文本超长截断 + title 全名）；
+   「确定」执行编排（执行中按钮禁点），「取消」零动作。工具条「入库」恒为纯入库。
+   上一版的勾选/下拉/按钮挂起态规则（.wb-as-paper / .wb-basket-btn-applied 等）随交互退役删除 */
+.wb-cards-tools button { flex: none; white-space: nowrap; }
+.wb-cards-tools > span:not(.wb-sp) { white-space: nowrap; }
+.wb-basket-row { display: flex; align-items: center; gap: 8px; padding: 6px 4px; cursor: pointer; font-size: 13px; }
+.wb-basket-list { max-height: 40vh; overflow-y: auto; border: 1px solid var(--line); border-radius: 8px; padding: 4px 10px; margin: 6px 0; }
+.wb-basket-row-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wb-basket-new { margin: 4px 0 2px 22px; }
+.wb-basket-foot { display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px; }
+/* 新建试题篮名称输入框（弹窗内选「＋ 新建试题篮…」时出现） */
+.wb-basket-name { border: 1px solid var(--line); border-radius: 8px; padding: 3px 8px; font-size: 12.5px; background: var(--card); color: var(--ink); width: 130px; font-family: inherit; }

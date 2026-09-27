@@ -1,0 +1,10 @@
+# 行尾钉死 LF：迁移 SQL 的提示词种子与 home.css 主题块解析均为行尾敏感（CRLF 检出会使
+# npm test 断言失败）——Windows 检出（autocrlf）也强制 LF，保证跨平台构建/测试一致。
+* text=auto eol=lf
+
+# 二进制资产
+*.png binary
+*.ico binary
+*.icns binary
+*.woff binary
+*.woff2 binary

@@ -1,0 +1,19 @@
+-- 0015 录题图资产化（0057）：无结构变更——本迁移只做口径占位与台账说明。
+-- 文件名序号 0015 走预分配序列（D-070：0015=0057 / 0016=0059，决策录）；
+-- 运行时 version 依 db.ts 注册顺序顺延为 13（0012→9 / 0013→10 / 0014→11 / 0010→12 之后）。
+--
+-- 为什么是空迁移（口径，任务书 §0.6）：
+--   本单要清的是**存量题 content 里的内联 data URL**（录题链老数据：图没落成资产，
+--   content 里是 `data:image/png;base64,…`），处置形态是「取字节 → 写 data/assets/recog/<文件>
+--   → 把 src 改写成 `data-assets/recog/<文件>` → 同题 questions.images 填上资产引用」。
+--   其中「写文件」是文件系统动作，SQLite 无 base64 解码与文件写能力，纯 SQL 迁移做不到。
+--   故真实回填在**外壳启动期一次性执行**：`src/shell/recog-image-backfill.ts`，挂在
+--   `reloadDatabase()`（`src/shell/main.ts`）内、`openDatabase` 之后——挂这里才能覆盖
+--   「恢复旧备份后再升版」场景（guard restore 同样走 reloadDatabase）。
+--
+-- 幂等与留痕（回填侧负责，非本文件）：
+--   扫不到内联 data URL 即 no-op（第二次启动零写入、零 operation_log）；
+--   单题失败不中断启动（operation_log 记 failed + 控制台 warning）；
+--   施加前文件级备份 data/bank.db.bak-0057（0039 先例 bank.db.bak-0039）。
+--
+-- 本迁移不改任何表/列/索引/种子——空迁移是**有意为之**，不是漏写；照 0010 的注释体例记账。

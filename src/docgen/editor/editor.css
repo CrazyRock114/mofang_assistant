@@ -1,0 +1,517 @@
+/* 0045 编辑器自带样式（设计初稿 v1.2：选项逐行观感由编辑器保证，不再依赖宿主 CSS）。
+   作用域全部挂在 .qe-toolbar / .question-editor-content 下，不外溢；颜色取暖纸主题变量并带回退值。 */
+
+/* ===== 工具条（符号化：ƒx / 🖼 / ✓ / 💾） ===== */
+.qe-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--line, #e6dcc9);
+  flex-wrap: wrap;
+}
+.qe-toolbar button {
+  border: 1px solid var(--line-strong, #d5c8b0);
+  background: var(--card, #fffdf7);
+  color: var(--ink-2, #6b5f52);
+  border-radius: 8px;
+  padding: 4px 10px;
+  font-size: 13px;
+  cursor: pointer;
+  line-height: 1.4;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 30px;
+}
+.qe-toolbar button:hover {
+  border-color: var(--orange, #e8734a);
+  color: var(--orange-deep, #d25a33);
+}
+.qe-toolbar .qe-tb-sep {
+  width: 1px;
+  height: 20px;
+  background: var(--line-strong, #d5c8b0);
+  margin: 0 3px;
+}
+.qe-toolbar .qe-tb-spacer {
+  flex: 1;
+}
+.qe-toolbar .qe-btn-save {
+  background: var(--orange, #e8734a);
+  color: #fff;
+  border: none;
+}
+
+/* ===== 编辑区（0045 第五轮：编辑器样式自带，不再依赖宿主/demo 样式表）
+   文本框 = 外层容器（有边框、圆角、内部留白）——高度由 minHeight 撑满，内容多则继续长；
+   文字与边框之间留 10px，光标在行首不被边框吃掉（用户目检①）。 ===== */
+.qe-editor-area {
+  border: 1px solid var(--line-strong, #d5c8b0);
+  border-radius: 8px;
+  background: var(--card, #fffdf7);
+  padding: 10px 12px;
+  overflow: auto;
+}
+.qe-editor-area:focus-within {
+  border-color: var(--orange, #e8734a);
+  box-shadow: 0 0 0 3px var(--picked-ring, rgba(232, 115, 74, 0.18));
+}
+/* 内容区自身不再画边框/焦点环（宿主样式缺位时浏览器默认焦点环会画成"橙框"，此处显式接管） */
+.question-editor-content {
+  outline: none;
+}
+.question-editor-content:focus,
+.question-editor-content:focus-visible {
+  outline: none;
+}
+
+/* ===== 编辑器内图片：不吃题库显示档的缩略限制（第六轮，用户目检④）=====
+ * 题库题卡为了版面把图片压到 min(48%,240px)/inline 200px，且对行内图用
+ * `width:auto !important` 覆盖内联宽——这套"显示档"此前也作用到编辑器，
+ * 导致「编辑器里图片偏小、拖拽放大没有效果」。编辑器内改为：按节点设定的尺寸出图，
+ * 上限=编辑区宽度（行内图用 CSS 变量承载 NodeView 写入的宽高，以 !important 反超题库规则）。 */
+.question-editor-content figure.diagram,
+.question-editor-content figure.diagram > img,
+.question-editor-content figure.diagram img.q-figure,
+.question-editor-content img.q-figure {
+  max-width: 100%;
+}
+.question-editor-content .inline-figure > img.q-figure {
+  width: var(--qe-fig-w, auto) !important;
+  height: var(--qe-fig-h, auto) !important;
+  max-width: 100%;
+}
+
+/* ===== 块级配图（figureNode）在编辑器内的自带样式 =====
+   第五轮：原实现只把块级图的拖拽手柄样式写在 demo.css（demo 页专用），
+   应用里手柄是无样式空 span（不可见不可点）→「单独成行的图片拖拽缩放不生效」的真因。
+   此处把 math-view / figure-view / resize-handle / figcaption 的编辑器必需样式收进自带样式表。 */
+.question-editor-content .math-view {
+  display: inline-block;
+  margin: 0 2px;
+  padding: 2px 4px;
+  cursor: pointer;
+  border-radius: 3px;
+}
+.question-editor-content .math-view:hover {
+  background: var(--paper-deep, #f4eddf);
+}
+.question-editor-content .math-view.ProseMirror-selectednode {
+  outline: 2px solid var(--orange, #e8734a);
+  background: var(--orange-soft, #fbe3d7);
+}
+.question-editor-content .figure-view {
+  position: relative;
+  /* 第六轮（用户目检②）：figure 收缩包裹图片——原先在应用里是块级占满整行，
+     手柄/浮动条按"整行右下角/右上角"定位 → 手柄飘到编辑区右边缘、条也飘到右边（截图实证）。
+     收缩后手柄回到图片右下角、条贴图片右上角。 */
+  width: fit-content;
+  max-width: 100%;
+}
+.question-editor-content figure.diagram[data-align="center"] {
+  text-align: center;
+  margin-left: auto;
+  margin-right: auto;
+}
+.question-editor-content figure.diagram[data-align="left"] {
+  text-align: left;
+  margin-left: 0;
+  margin-right: auto;
+}
+.question-editor-content figure.diagram[data-align="right"] {
+  text-align: right;
+  margin-left: auto;
+  margin-right: 0;
+}
+.question-editor-content figcaption {
+  margin-top: 6px;
+  font-size: 12.5px;
+  color: var(--ink-3, #9a8c7b);
+}
+/* 块级图右下角等比缩放柄（选中可见；拖动松手写回节点） */
+.question-editor-content .figure-view .resize-handle {
+  position: absolute;
+  right: -6px;
+  bottom: -6px;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: var(--orange, #e8734a);
+  border: 2px solid #fff;
+  box-shadow: 0 1px 4px rgba(90, 70, 45, 0.35);
+  cursor: nwse-resize;
+  display: none;
+  z-index: 2;
+}
+.question-editor-content .figure-view.ProseMirror-selectednode .resize-handle {
+  display: block;
+}
+
+/* ===== 题块与答案块的自带基础样式（第五轮：此前只在 demo.css，应用里缺位；
+   第六轮：题块「拖动调整题目顺序」手柄按用户口径**删除**，此处不再提供其样式） ===== */
+.question-editor-content .question {
+  position: relative;
+}
+.question-editor-content .answer {
+  margin-top: 12px;
+  padding: 10px 12px;
+  background: var(--green-soft, #e2ede4);
+  border-left: 3px solid var(--green-ink, #3e6b52);
+  border-radius: 0 8px 8px 0;
+}
+
+/* ===== 选项区块（.opt-row 逐行：选项数≠4 可增删；样式自带，不依赖宿主） ===== */
+.question-editor-content .options.qe-options {
+  border: 1px solid var(--line, #e6dcc9);
+  border-radius: 10px;
+  background: var(--card-warm, #fff9ef);
+  padding: 8px 12px 10px;
+  margin: 12px 0;
+}
+.question-editor-content .qe-opt-head {
+  font-size: 11px;
+  color: var(--ink-3, #9a8c7b);
+  margin-bottom: 4px;
+  user-select: none;
+}
+.question-editor-content .qe-opt-rows {
+  display: block;
+}
+.question-editor-content .option.qe-opt-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 5px 8px;
+  border-radius: 8px;
+  margin: 2px 0;
+}
+.question-editor-content .option.qe-opt-row:hover {
+  background: var(--card, #fffdf7);
+}
+.question-editor-content .qe-opt-body {
+  flex: 1;
+  min-width: 0;
+}
+.question-editor-content .option.qe-opt-row .qe-opt-del {
+  flex: none;
+  align-self: center;
+  border: none;
+  background: transparent;
+  color: var(--ink-3, #9a8c7b);
+  font-size: 12px;
+  cursor: pointer;
+  border-radius: 6px;
+  padding: 2px 7px;
+  visibility: hidden;
+}
+.question-editor-content .option.qe-opt-row:hover .qe-opt-del {
+  visibility: visible;
+}
+.question-editor-content .option.qe-opt-row .qe-opt-del:hover {
+  color: var(--st-red, #c94f3d);
+  background: var(--st-red-bg, #fbe9e4);
+}
+.question-editor-content .option.qe-opt-row .qe-opt-del:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+.question-editor-content .qe-opt-add {
+  display: block;
+  width: 100%;
+  margin-top: 6px;
+  border: 1px dashed var(--line-strong, #d5c8b0);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ink-3, #9a8c7b);
+  padding: 6px;
+  font-size: 12.5px;
+  cursor: pointer;
+}
+.question-editor-content .qe-opt-add:hover {
+  border-color: var(--orange, #e8734a);
+  color: var(--orange-deep, #d25a33);
+}
+.question-editor-content .qe-opt-add:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ===== 表格尺寸选择面板（返工③：先选几行几列，Word 式网格） ===== */
+.qe-table-picker {
+  background: var(--card, #fffdf7);
+  border: 1px solid var(--line-strong, #d5c8b0);
+  border-radius: 10px;
+  padding: 8px 10px 6px;
+  box-shadow: 0 8px 32px rgba(74, 52, 30, 0.18);
+}
+.qe-table-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(8, 20px);
+  grid-auto-rows: 20px;
+  gap: 3px;
+}
+.qe-table-picker .qe-table-cell {
+  border: 1px solid var(--line-strong, #d5c8b0);
+  background: var(--card, #fffdf7);
+  border-radius: 3px;
+  padding: 0;
+  cursor: pointer;
+}
+.qe-table-picker .qe-table-cell.on {
+  background: var(--orange-soft, #fbe3d7);
+  border-color: var(--orange, #e8734a);
+}
+.qe-table-picker-caption {
+  margin-top: 6px;
+  font-size: 11.5px;
+  color: var(--ink-3, #9a8c7b);
+  text-align: center;
+  min-height: 16px;
+}
+/* 第五轮：网格下方的「行 × 列 + 插入」数字输入 */
+.qe-table-picker-ops {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid var(--line, #e6dcc9);
+  font-size: 11.5px;
+  color: var(--ink-2, #6b5f52);
+}
+.qe-table-picker-ops input {
+  width: 44px;
+  border: 1px solid var(--line-strong, #d5c8b0);
+  border-radius: 6px;
+  padding: 3px 5px;
+  font-size: 12px;
+  font-family: inherit;
+  color: var(--ink, #3a322b);
+  background: var(--card, #fffdf7);
+}
+.qe-table-picker-ops button {
+  margin-left: auto;
+  border: none;
+  border-radius: 6px;
+  background: var(--orange, #e8734a);
+  color: #fff;
+  font-size: 12px;
+  padding: 4px 12px;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+/* ===== 表格（0045 目检返工④：官方 @tiptap/extension-table；编辑态最小可用样式，
+   出纸/题库侧样式属 R-037 单列项，不在本单） ===== */
+.question-editor-content table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 10px 0;
+  table-layout: fixed;
+}
+.question-editor-content table td,
+.question-editor-content table th {
+  border: 1px solid var(--line-strong, #d5c8b0);
+  padding: 5px 8px;
+  min-width: 2em;
+  vertical-align: top;
+  position: relative;
+}
+.question-editor-content table th {
+  background: var(--paper-deep, #f4eddf);
+  font-weight: 600;
+  text-align: left;
+}
+.question-editor-content table .selectedCell:after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(232, 115, 74, 0.18);
+  pointer-events: none;
+}
+.question-editor-content table .column-resize-handle {
+  display: none;
+}
+
+/* ===== 公式弹层：紧凑符号面板（0045 目检返工②：替代 mathlive 整宽大键盘） ===== */
+.qe-math-field math-field {
+  width: 100%;
+  min-height: 52px;
+  border: 1px solid var(--orange, #e8734a);
+  border-radius: 8px;
+  background: var(--card-warm, #fff9ef);
+  padding: 6px 8px;
+  font-size: 17px;
+}
+.qe-math-field {
+  min-height: 52px;
+}
+/* mathlive 自带的键盘开关/菜单按钮隐藏：本弹层用自绘紧凑符号面板（返工②），
+   且字段策略为 sandboxed（大键盘不可用）——留着是死按钮，误导用户 */
+.qe-math-field .ML__virtual-keyboard-toggle,
+.qe-math-field .ML__menu-toggle {
+  display: none;
+}
+.qe-math-tabs {
+  display: flex;
+  gap: 3px;
+  margin-bottom: 6px;
+}
+.qe-math-tab {
+  flex: 1;
+  border: 1px solid var(--line-strong, #d5c8b0);
+  background: var(--card, #fffdf7);
+  color: var(--ink-2, #6b5f52);
+  border-radius: 999px;
+  padding: 2px 0;
+  font-size: 12px;
+  cursor: pointer;
+  font-family: inherit;
+}
+.qe-math-tab.on {
+  background: var(--orange-soft, #fbe3d7);
+  border-color: var(--orange, #e8734a);
+  color: var(--orange-deep, #d25a33);
+  font-weight: 600;
+}
+.qe-math-keys {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 4px;
+}
+.qe-math-key {
+  border: 1px solid var(--line-strong, #d5c8b0);
+  background: var(--card, #fffdf7);
+  color: var(--ink, #3a322b);
+  border-radius: 6px;
+  height: 30px;
+  font-size: 13px;
+  cursor: pointer;
+  font-family: inherit;
+  padding: 0 2px;
+  overflow: hidden;
+}
+.qe-math-key:hover {
+  border-color: var(--orange, #e8734a);
+  color: var(--orange-deep, #d25a33);
+  background: var(--orange-soft, #fbe3d7);
+}
+.qe-math-key-act {
+  background: var(--paper-deep, #f4eddf);
+  color: var(--ink-2, #6b5f52);
+}
+
+/* ===== 行内图（串在文中）编辑观感 ===== */
+.question-editor-content .inline-figure.inline-figure-view {
+  position: relative;
+  display: inline-block;
+  margin: 0 4px; /* 与文字的间隔：光标落在图前后时清晰可见（用户目检⑤） */
+  padding: 0 1px;
+  vertical-align: middle;
+  /* 第六轮（目检⑤）：不给 line-height:0——行盒被压成零高会让图前后的光标高度为 0（光标不显示），
+     用正常行高让光标在图前后正常渲染 */
+  line-height: normal;
+}
+.question-editor-content .inline-figure img.q-figure {
+  max-width: 100%;
+  height: auto;
+  vertical-align: middle;
+}
+.question-editor-content .inline-figure .resize-handle {
+  position: absolute;
+  right: -6px;
+  bottom: -6px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--orange, #e8734a);
+  border: 2px solid #fff;
+  box-shadow: 0 1px 4px rgba(90, 70, 45, 0.35);
+  cursor: nwse-resize;
+  display: none;
+}
+.question-editor-content .inline-figure.ProseMirror-selectednode .resize-handle {
+  display: block;
+}
+.question-editor-content .figure-view {
+  position: relative;
+}
+
+/* ===== 图片选中浮动条（块级/行内共用；平时零占位，选中才出现）
+   返工②：改到**图片上方**且 width:max-content（原实现被可用宽度挤到 150px 换行成 81px 高、
+   压在图片下半部，用户再点一下图片就会点到条上按钮 → 误删/误开像素输入） ===== */
+.qe-fig-bar {
+  position: absolute;
+  right: 0; /* 第六轮：靠图片右上角对齐（不居中压在图片上方正中，减少误点的可能） */
+  bottom: calc(100% + 14px);
+  width: max-content;
+  max-width: 60vw;
+  z-index: 30;
+  display: none;
+  gap: 2px;
+  background: var(--ink, #3a322b);
+  border-radius: 9px;
+  padding: 3px;
+  box-shadow: 0 8px 32px rgba(74, 52, 30, 0.16);
+  white-space: nowrap;
+}
+.ProseMirror-selectednode > .qe-fig-bar,
+.ProseMirror-selectednode .qe-fig-bar {
+  display: inline-flex;
+}
+.qe-fig-bar button.qe-fig-act {
+  border: none;
+  background: transparent;
+  color: #e8dfd2;
+  font-size: 11.5px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.qe-fig-bar button.qe-fig-act:hover {
+  background: rgba(250, 246, 239, 0.14);
+}
+.qe-fig-bar button.qe-fig-act.cur {
+  background: var(--orange, #e8734a);
+  color: #fff;
+}
+.qe-fig-bar button.qe-fig-act:disabled {
+  cursor: default;
+}
+.qe-fig-bar button.qe-fig-del:hover {
+  background: var(--brick, #b5493a);
+  color: #fff;
+}
+/* 两步删除：首点变「确认删除」（警示色），3 秒内再点才真删 */
+.qe-fig-bar button.qe-fig-del.armed {
+  background: var(--brick, #b5493a);
+  color: #fff;
+  font-weight: 600;
+}
+
+/* 选中图片的高亮边框（返工①：点击图片 = 高亮 + 出操作菜单，不放大） */
+.question-editor-content .inline-figure.ProseMirror-selectednode img.q-figure,
+.question-editor-content figure.figure-view.ProseMirror-selectednode img.q-figure {
+  outline: 2px solid var(--orange, #e8734a);
+  outline-offset: 1px;
+}
+
+/* 图片放大预览（浮动条「预览」入口；点任意处 / Esc 关闭） */
+.qe-fig-preview-mask {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  background: rgba(30, 24, 18, 0.72);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: zoom-out;
+}
+.qe-fig-preview-mask img {
+  max-width: 88vw;
+  max-height: 86vh;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.4);
+}

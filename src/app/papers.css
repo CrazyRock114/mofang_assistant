@@ -1,0 +1,132 @@
+/* 0044：试卷管理页 + 存为试卷弹层样式（设计稿 paper-manager 设计稿 v5 类名落地）。
+   变量沿用 theme.css 既有 token（--paper/--card/--line/--ink 系）；此处只补结构类。
+   同文件收 0044 录题台「存为试卷」弹层（m-* / treepick / tp-*）与试卷卡菜单（pcard-menu）。 */
+
+/* 三轮目检④：页面定高（口径同 .bank-page：视口 − .main 上下 padding），左栏/工具条固定，
+   只有右侧试题区滚动；左栏内部独立滚动（文件夹多时不撑破） */
+.papers-page { display: flex; flex-direction: column; height: calc(100vh - 62px); }
+.papers-page .page-head { margin-bottom: 0.9rem; flex: 0 0 auto; }
+
+.pm { display: flex; gap: 0; flex: 1; min-height: 0; }
+
+/* ===== 左栏 ===== */
+.pm-side { width: 218px; flex: none; background: var(--paper-deep, #f4eddf); border: 1px solid var(--line, #e6dcc9); border-radius: 14px; padding: 16px 10px; display: flex; flex-direction: column; gap: 2px; min-height: 0; overflow-y: auto; scrollbar-width: thin; }
+/* 七轮目检：树容器横向滚动（深层文件夹不压缩，左右滚动查看） */
+/* 九轮目检：树区域自滚动（横竖均可）——左栏其余部分（标题/固定行/新建按钮/提示/回收站）固定可见 */
+.pm-tree-scroll { overflow: auto; min-height: 0; flex: 0 1 auto; }
+.pm-tree-scroll::-webkit-scrollbar { width: 8px; height: 8px; }
+.pm-tree-scroll::-webkit-scrollbar-thumb { background: var(--line-strong, #d5c8b0); border-radius: 4px; }
+.pm-tree-scroll::-webkit-scrollbar-thumb:hover { background: var(--ink-3, #9a8c7b); }
+/* 六轮目检：浅色背景上滚动条可见化 */
+.pm-side::-webkit-scrollbar { width: 8px; }
+.pm-side::-webkit-scrollbar-track { background: transparent; }
+.pm-side::-webkit-scrollbar-thumb { background: var(--line-strong, #d5c8b0); border-radius: 4px; }
+.pm-side::-webkit-scrollbar-thumb:hover { background: var(--ink-3, #9a8c7b); }
+.pm-side h4 { font-size: 0.72rem; color: var(--ink-3, #9a8c7b); padding: 0 10px 8px; letter-spacing: 0.06em; margin: 0; font-weight: 600; }
+.folder { display: flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 9px; font-size: 0.84rem; cursor: pointer; color: var(--ink-2, #6b5f52); }
+.folder:hover { background: rgba(255, 253, 247, 0.75); }
+.folder.on { background: var(--card, #fffdf7); color: var(--ink, #3a322b); font-weight: 600; box-shadow: 0 1px 2px rgba(90, 70, 45, 0.08); }
+.folder .cnt { margin-left: auto; font-size: 0.72rem; color: var(--ink-3, #9a8c7b); }
+.folder .f-ico { width: 16px; text-align: center; flex: none; }
+.folder.new { color: var(--ink-3, #9a8c7b); border: 1px dashed var(--line-strong, #d5c8b0); margin-top: 8px; justify-content: center; }
+.folder.new:hover { color: var(--orange-deep, #d25a33); border-color: var(--orange, #e8734a); }
+.folder.trash { border-top: 1px dashed var(--line, #e6dcc9); margin-top: 8px; padding-top: 12px; }
+.folder.trash:hover { color: #b5493a; }
+.side-note { margin-top: 12px; padding: 10px; font-size: 0.72rem; color: var(--ink-3, #9a8c7b); line-height: 1.7; border-top: 1px dashed var(--line, #e6dcc9); }
+.side-sp { flex: 1; }
+/* 目检返工④：拖拽悬停落点行高亮 */
+.pm-side .tree-row.drop-hot { outline: 2px dashed var(--orange, #e8734a); outline-offset: -2px; background: var(--orange-soft, #fbe3d7); }
+/* 二轮目检：行内新建文件夹（命名行直接出现在树末尾，不弹窗） */
+/* 九轮目检：命名行按内容完整宽度渲染（横向滚动可滚到），input 保底约 6 字宽不收缩——深层新建时命名栏与确认按钮完整可见 */
+.folder.inline-new { border: 1px dashed var(--orange, #e8734a); justify-content: flex-start; gap: 6px; padding: 4px 6px; width: max-content; min-width: 100%; }
+.folder.inline-new .input { flex: 1 0 auto; width: 9em; min-width: 9em; font-size: 0.8rem; padding: 4px 8px; }
+.folder-rename-pop { display: flex; gap: 6px; align-items: center; padding: 8px; }
+.folder-rename-pop .input { width: 170px; font-size: 0.8rem; padding: 4px 8px; }
+/* 二轮目检：批量勾选框（卡片右上角） */
+.pcard-check { position: absolute; top: 10px; right: 12px; line-height: 1; }
+.pcard-check input { width: 15px; height: 15px; cursor: pointer; }
+/* 目检返工⑨：分段翻页器 */
+.pm-pager { display: flex; align-items: center; gap: 12px; justify-content: center; margin-top: 12px; }
+.pm-pager-info { font-size: 0.8rem; color: var(--ink-3, #9a8c7b); }
+
+/* 树行（papers-tree-*）内嵌 folder 风格：TreeRows 的 tree-row 主题对齐 */
+.pm-side .tree-row { border-radius: 9px; margin: 1px 0; }
+.pm-side .tree-row:hover { background: rgba(255, 253, 247, 0.75); }
+.pm-side .tree-row.active { background: var(--card, #fffdf7); font-weight: 600; }
+
+/* ===== 右主区 ===== */
+.pm-main { flex: 1; padding: 0 0 22px 22px; min-width: 0; display: flex; flex-direction: column; min-height: 0; }
+.pm-main .pm-head, .pm-main .pm-tools { flex: 0 0 auto; }
+.pm-scroll { flex: 1; min-height: 0; overflow-y: auto; padding-bottom: 24px; }
+.pm-head { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 12px; gap: 12px; }
+.pm-head h1 { font-size: 1.4rem; margin: 0; }
+.pm-head .sub { color: var(--ink-2, #6b5f52); font-size: 0.8rem; margin-top: 5px; }
+
+.pm-tabs { display: flex; gap: 6px; margin-bottom: 14px; }
+.pm-tab { padding: 7px 18px; border-radius: 999px; font-size: 0.85rem; cursor: pointer; color: var(--ink-2, #6b5f52); border: 1px solid transparent; }
+.pm-tab.on { background: var(--card, #fffdf7); border-color: var(--line, #e6dcc9); color: var(--ink, #3a322b); font-weight: 600; box-shadow: 0 1px 2px rgba(90, 70, 45, 0.08); }
+.pm-tab .badge { display: inline-block; margin-left: 6px; background: var(--orange-soft, #fbe3d7); color: var(--orange-deep, #d25a33); border-radius: 999px; padding: 0 8px; font-size: 0.72rem; }
+
+.pm-tools { display: flex; gap: 10px; align-items: center; background: var(--card, #fffdf7); border: 1px solid var(--line, #e6dcc9); border-radius: 14px; padding: 10px 14px; box-shadow: 0 1px 2px rgba(90, 70, 45, 0.06); margin-bottom: 16px; flex-wrap: wrap; }
+.pm-search { flex: 1; max-width: 320px; display: flex; align-items: center; gap: 7px; background: var(--paper, #faf6ef); border: 1px solid var(--line, #e6dcc9); border-radius: 9px; padding: 7px 12px; font-size: 0.82rem; color: var(--ink-2, #6b5f52); }
+.pm-search input { border: none; background: transparent; outline: none; font-family: inherit; font-size: 0.82rem; width: 100%; color: var(--ink, #3a322b); }
+.pm-filter { display: flex; gap: 5px; }
+.fchip { padding: 5px 13px; border-radius: 999px; font-size: 0.78rem; cursor: pointer; color: var(--ink-3, #9a8c7b); border: 1px solid transparent; }
+.fchip.on { background: var(--note-yellow, #fff4d6); color: var(--gold-text, #8a6a1f); border-color: var(--gold, #d9b25f); font-weight: 600; }
+.pm-tools .sp { flex: 1; }
+.pm-sort-hint { font-size: 0.75rem; }
+
+/* ===== 试卷卡网格 ===== */
+.pm-group { font-size: 0.82rem; color: var(--ink-2, #6b5f52); margin: 20px 0 10px; display: flex; align-items: center; gap: 10px; }
+.pm-group::after { content: ""; flex: 1; border-top: 1px dashed var(--line, #e6dcc9); }
+.pm-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(258px, 1fr)); gap: 16px; }
+
+.pcard { position: relative; background: var(--card, #fffdf7); border: 1px solid var(--line, #e6dcc9); border-radius: 14px; box-shadow: 0 1px 2px rgba(90, 70, 45, 0.06); overflow: visible; }
+.pcard:hover { border-color: var(--orange, #e8734a); }
+.pcard .body { padding: 14px 16px 13px; }
+.pcard .name { font-size: 0.9rem; font-weight: 600; line-height: 1.45; margin-bottom: 7px; word-break: break-all; }
+.pcard .meta { font-size: 0.75rem; color: var(--ink-3, #9a8c7b); display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.pill { display: inline-block; padding: 1px 9px; border-radius: 999px; font-size: 0.68rem; font-weight: 600; }
+.pill.composing { background: #fbf1d8; color: #d99a2b; }
+.pill.done { background: #e5f0e4; color: #4e8a5a; }
+.pill.archived { background: var(--paper-deep, #f4eddf); color: var(--ink-3, #9a8c7b); }
+.pill.basket { background: var(--orange-soft, #fbe3d7); color: var(--orange-deep, #d25a33); }
+.pill.trashed { background: #fbe9e4; color: #c94f3d; }
+.pcard .acts { display: flex; gap: 7px; margin-top: 11px; }
+.pcard .acts .btn-sm { flex: 1; }
+.pcard .acts .more { flex: none; width: 32px; text-align: center; }
+/* 三轮目检⑥：按钮语义色——继续排版=橙(primary) / 打开试题篮=绿(green) / 查看=金(gold) */
+.btn-gold { background: var(--gold, #d9b25f) !important; color: #fff !important; border-color: var(--gold, #d9b25f) !important; }
+.btn-gold:hover { background: var(--gold-text, #8a6a1f) !important; }
+.pcard .fdir { font-size: 0.7rem; color: var(--ink-3, #9a8c7b); margin-top: 9px; display: flex; align-items: center; gap: 4px; }
+
+/* 目检返工⑦：菜单挂在 ⋯ 按钮 relative 包裹内、展开于按钮左侧（不遮挡按钮）；点外/Esc 关闭 */
+.more-wrap { position: relative; display: inline-block; flex: none; width: 32px; }
+.pcard-menu.left { position: absolute; right: calc(100% + 8px); top: 0; align-items: stretch; min-width: 132px; white-space: nowrap; }
+.pcard-menu.ctx { position: fixed; }
+.pcard-menu button { border: none; background: transparent; text-align: left; padding: 7px 12px; font-size: 0.8rem; border-radius: 7px; cursor: pointer; font-family: inherit; color: var(--ink-2, #6b5f52); }
+.pcard-menu button:hover { background: var(--paper, #faf6ef); color: var(--ink, #3a322b); }
+.pcard-menu button.danger { color: #b5493a; }
+
+
+
+/* ===== 存为试卷弹层 / FolderTreePicker（D-063 树浮层） ===== */
+.treepick { position: relative; }
+.treepick-field { display: flex; align-items: center; gap: 7px; width: 100%; border: 1px solid var(--line-strong, #d5c8b0); border-radius: 9px; padding: 9px 12px; font-size: 0.84rem; background: var(--card-warm, #fff9ef); cursor: pointer; }
+.treepick-field .v { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.treepick-pop { position: absolute; left: 0; right: 0; top: calc(100% + 6px); z-index: 50; background: var(--card, #fffdf7); border: 1px solid var(--line-strong, #d5c8b0); border-radius: 10px; box-shadow: 0 8px 32px rgba(74, 52, 30, 0.16); padding: 8px 6px; max-height: 220px; overflow-y: auto; }
+.tp-row { display: flex; align-items: center; gap: 6px; padding: 6px 8px; border-radius: 8px; font-size: 0.8rem; cursor: pointer; color: var(--ink-2, #6b5f52); }
+.tp-row:hover { background: var(--paper, #faf6ef); }
+.tp-row.on { background: var(--note-yellow, #fff4d6); color: var(--gold-text, #8a6a1f); font-weight: 600; }
+.tp-row .caret { width: 14px; flex: none; font-size: 10px; color: var(--ink-3, #9a8c7b); }
+.tp-row.tp-new { border-top: 1px dashed var(--line, #e6dcc9); margin-top: 6px; padding-top: 8px; color: var(--ink-3, #9a8c7b); justify-content: center; }
+.tp-row.tp-new:hover { color: var(--orange-deep, #d25a33); }
+.tp-row.tp-create { gap: 8px; }
+.tp-row.tp-create .input { flex: 1; }
+.tp-pop .tree-row { border-radius: 8px; }
+.treepick-pop .tree-row:hover { background: var(--paper, #faf6ef); }
+.treepick-pop .tree-row.active { background: var(--note-yellow, #fff4d6); font-weight: 600; }
+
+/* 存为试卷弹层语义框 */
+.m-note { background: var(--note-green, #eff4ea); border: 1px solid #d8e4d4; border-radius: 9px; padding: 10px 13px; font-size: 0.78rem; color: #2c4f3c; line-height: 1.7; margin: 0 0 16px; }
+.m-sub { font-size: 0.8rem; color: var(--ink-2, #6b5f52); margin: 0 0 16px; }

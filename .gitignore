@@ -1,0 +1,11 @@
+# 依赖
+node_modules/
+
+# 构建产物
+dist/
+release/
+
+# 运行时 / 本地杂物
+*.log
+.DS_Store
+Thumbs.db

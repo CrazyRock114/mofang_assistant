@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>魔方助教</title>
+    <!-- 0010 防闪烁：先于样式表读 mfa-theme 写 <html data-theme>（改造自 warm-paper/index.html，去 location.search 分支，保留 localStorage+缺省 warm） -->
+    <script>(function(){var s=null;try{s=localStorage.getItem('mfa-theme')}catch(e){}document.documentElement.setAttribute('data-theme',(s==='light'||s==='dark')?s:'warm');})();</script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/app/main.tsx"></script>
+  </body>
+</html>
