@@ -345,14 +345,41 @@ export interface PdfExportOutcome {
   canceled: boolean;
 }
 
-/** 导出 PDF（Electron 真机；pageSize 按 layoutConfig.pageSize）。
- * **0035 修复批**：返回三态outcome（旧状丢弃主进程 filePath → 用户取消仍报「已提交导出」）。 */
+/** 导出 PDF（Electron 真机调 printToPDF；纯网页端调起浏览器高保真原生打印另存为 PDF） */
 export async function exportPaperPdf(paper: Paper, questions: Question[], mode: PreviewMode, layout?: PaperRenderLayout): Promise<PdfExportOutcome> {
-  if (!window.__mofangBank) {
-    return { error: 'PDF 导出功能仅在 Electron 环境下可用', filePath: null, canceled: false };
-  }
   const html = await buildHtml(paper, questions, mode, layout);
   const suggestedName = `${paper.title}-${mode === 'student' ? '学生版' : '教师版'}.pdf`;
+
+  if (!window.__mofangBank) {
+    // 纯网页端方案：通过隐藏 iframe 调起浏览器打印，用户可直接另存为 PDF
+    try {
+      const iframe = document.createElement('iframe');
+      iframe.style.position = 'fixed';
+      iframe.style.right = '0';
+      iframe.style.bottom = '0';
+      iframe.style.width = '0';
+      iframe.style.height = '0';
+      iframe.style.border = '0';
+      document.body.appendChild(iframe);
+      const doc = iframe.contentWindow?.document;
+      if (doc) {
+        doc.open();
+        doc.write(html);
+        doc.close();
+        setTimeout(() => {
+          iframe.contentWindow?.focus();
+          iframe.contentWindow?.print();
+          setTimeout(() => {
+            if (iframe.parentNode) document.body.removeChild(iframe);
+          }, 6000);
+        }, 500);
+      }
+      return { error: null, filePath: '已调起打印对话框（选择“另存为 PDF”）', canceled: false };
+    } catch (err) {
+      return { error: `调起打印失败：${err instanceof Error ? err.message : String(err)}`, filePath: null, canceled: false };
+    }
+  }
+
   const pageSize = layout?.layoutConfig?.pageSize;
   // fix-2 F2-A：横版出纸按 layoutConfig.orientation（printToPDF landscape 参数）
   const landscape = layout?.layoutConfig?.orientation === 'landscape';
@@ -406,10 +433,7 @@ export interface DocxExportOutcome {
 }
 
 /**
- * 0035 P4：导出 Word(DOCX)（Electron 真机）。
- * 入参与 PDF 导出同形（Question[] + PaperRenderLayout）但**不走 HTML**：结构化数据直传主进程
- * 自建计划（路线定案：不做 HTML→DOM 序列化）；公式=图片（D-051），栅格在主进程完成。
- * layout 未提供的键不传（主进程回落 paper.layoutConfig，再回落引擎全默认）。
+ * 0035 P4：导出 Word(DOCX)（Electron 调主进程；纯网页端前端生成 Blob 并下载）。
  */
 export async function exportPaperDocx(
   paper: Paper,
@@ -417,10 +441,26 @@ export async function exportPaperDocx(
   mode: PreviewMode,
   layout?: PaperRenderLayout
 ): Promise<DocxExportOutcome> {
-  if (!window.__mofangBank) {
-    return { error: 'Word 导出功能仅在 Electron 环境下可用', filePath: null, canceled: false };
-  }
   const suggestedName = `${paper.title}-${mode === 'student' ? '学生版' : '教师版'}.docx`;
+
+  if (!window.__mofangBank) {
+    try {
+      const { exportPaperDocxInBrowser } = await import('../services/web-docx.js');
+      const blob = await exportPaperDocxInBrowser(paper, questions, mode, layout);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = suggestedName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      return { error: null, filePath: suggestedName, canceled: false };
+    } catch (err) {
+      return { error: `生成 Word 失败：${err instanceof Error ? err.message : String(err)}`, filePath: null, canceled: false };
+    }
+  }
+
   const questionLayouts = layout?.questionLayouts;
   const textBlocks = layout?.textBlocks;
   const scores = layout?.scores;

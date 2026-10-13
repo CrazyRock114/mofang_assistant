@@ -1,6 +1,6 @@
 // Phase 3: IPC handlers — 注册所有 bank 通道 + PDF 导出
 
-import { ipcMain, BrowserWindow, dialog } from 'electron';
+import { ipcMain, BrowserWindow, dialog, screen } from 'electron';
 // 0072（只增）：update.openExternal 外链出口（单列一行——既有 electron import 行零改动）
 import { shell } from 'electron';
 import { IPC_CHANNELS } from '../shared/contracts/ipc-channels.js';
@@ -1412,7 +1412,7 @@ export function registerFileIpcHandlers(opts: {
     if (opts.smoke?.textImportPath) {
       return {
         content: readFileSync(opts.smoke.textImportPath, 'utf-8'),
-        fileName: opts.smoke.textImportPath.split(/[\/]/).pop(),
+        fileName: opts.smoke.textImportPath.split(/[\\/]/).pop(),
       };
     }
     const result = await dialog.showOpenDialog({
@@ -1424,7 +1424,7 @@ export function registerFileIpcHandlers(opts: {
     const filePath = result.filePaths[0];
     return {
       content: readFileSync(filePath, 'utf-8'),
-      fileName: filePath.split(/[\/]/).pop(),
+      fileName: filePath.split(/[\\/]/).pop(),
     };
   });
 
@@ -1524,12 +1524,14 @@ export function registerFileIpcHandlers(opts: {
     // zoom-to-fit：Windows 会把高于工作区的窗口内容钳短（实测 1000px 卡截到 884 DIP），
     // 以「视口=卡片×zoom」绕开钳位，保证整卡入帧无白边；工作区足够（100% 缩放大屏）时 zoom=1，
     // PNG=精确设计尺寸。物理像素 = 视口 DIP × 设备缩放。
-    const { screen } = require('electron') as typeof import('electron');
-    const workArea = screen.getPrimaryDisplay().workAreaSize;
+    const workArea = (typeof screen !== 'undefined' && screen && typeof screen.getPrimaryDisplay === 'function')
+      ? screen.getPrimaryDisplay().workAreaSize
+      : { width: 1920, height: 1080 };
 
     for (const card of payload.cards) {
       const safeName = card.fileName.replace(/[\\/:*?"<>|]/g, '_');
       const tmpHtmlPath = join(tmpDir, `${Date.now()}-${safeName}.html`);
+      let cardWindow: BrowserWindow | null = null;
       try {
         writeFileSync(tmpHtmlPath, rewriteDataAssets(card.html), 'utf-8');
         const width = card.width ?? 750;
@@ -1537,7 +1539,7 @@ export function registerFileIpcHandlers(opts: {
         const zoom = Math.min(1, (workArea.width - 40) / width, (workArea.height - 80) / height);
         const viewW = Math.ceil(width * zoom);
         const viewH = Math.ceil(height * zoom);
-        const cardWindow = new BrowserWindow({
+        cardWindow = new BrowserWindow({
           show: false,
           useContentSize: true,
           width: viewW,
@@ -1548,11 +1550,15 @@ export function registerFileIpcHandlers(opts: {
         // 窗口视口（zoom 换算后）恰为整卡 → capturePage 输出=卡片完整无白边
         const image = await cardWindow.webContents.capturePage();
         cardWindow.close();
+        cardWindow = null;
         writeFileSync(join(outDir, `${safeName}.png`), image.toPNG());
         count += 1;
       } catch (err) {
         failed.push({ fileName: safeName, error: err instanceof Error ? err.message : String(err) });
       } finally {
+        if (cardWindow && !cardWindow.isDestroyed()) {
+          try { cardWindow.destroy(); } catch { /* 忽略销毁异常 */ }
+        }
         try { unlinkSync(tmpHtmlPath); } catch { /* 忽略清理失败 */ }
       }
     }

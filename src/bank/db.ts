@@ -1,5 +1,13 @@
 // Phase 2: SQLite 数据库初始化、迁移执行器、user_version 管理
 
+// 抑制 Node.js 22+ node:sqlite 的 ExperimentalWarning 控制台噪音
+if (typeof process !== 'undefined' && typeof process.on === 'function') {
+  process.on('warning', (warning) => {
+    if (warning.name === 'ExperimentalWarning' && warning.message.includes('SQLite')) return;
+    console.warn(warning);
+  });
+}
+
 import { DatabaseSync } from 'node:sqlite';
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';

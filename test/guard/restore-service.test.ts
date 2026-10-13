@@ -348,4 +348,53 @@ describe('restore-service', () => {
     expect(preview.valid).toBe(false);
     expect(preview.errors.some(e => e.includes('Duplicate'))).toBe(true);
   });
+
+  it('should reject backup with Windows drive absolute path cross-platform', async () => {
+    const maliciousBackupPath = join(testDir, 'win-abs.zip');
+    const manifest = {
+      format: 'mofang-assistant-backup',
+      format_version: 1,
+      backup_id: 'win-abs',
+      created_at: new Date().toISOString(),
+      app_version: '0.0.0',
+      schema_version: 1,
+      counts: { questions: 0, papers: 0, assets: 0 },
+      database: { path: 'db/mofang.sqlite', size: 0 },
+      files: [],
+    };
+
+    createZip([
+      { path: 'manifest.json', content: Buffer.from(JSON.stringify(manifest)) },
+      { path: 'C:\\Windows\\System32\\evil.dll', content: Buffer.from('evil') },
+    ], maliciousBackupPath);
+
+    const preview = previewBackup(maliciousBackupPath);
+    expect(preview.valid).toBe(false);
+    expect(preview.errors.some(e => e.includes('Absolute path detected'))).toBe(true);
+  });
+
+  it('VACCINE: restoreBackup 遇到越界路径时必须坚决拒绝并保持 staging 隔离', async () => {
+    const maliciousBackupPath = join(testDir, 'traversal-restore.zip');
+    const manifest = {
+      format: 'mofang-assistant-backup',
+      format_version: 1,
+      backup_id: 'traversal-restore',
+      created_at: new Date().toISOString(),
+      app_version: '0.0.0',
+      schema_version: 1,
+      counts: { questions: 0, papers: 0, assets: 0 },
+      database: { path: 'db/mofang.sqlite', size: 0 },
+      files: [],
+    };
+
+    createZip([
+      { path: 'manifest.json', content: Buffer.from(JSON.stringify(manifest)) },
+      { path: '../../escaped.txt', content: Buffer.from('escaped content') },
+    ], maliciousBackupPath);
+
+    const result = await restoreBackup(maliciousBackupPath, targetDataDir, 1, realMigrationsDir, true);
+    expect(result.success).toBe(false);
+    expect(result.error).toMatch(/Path traversal detected/);
+    expect(existsSync(join(testDir, 'escaped.txt'))).toBe(false);
+  });
 });

@@ -2,7 +2,7 @@
 
 import { randomUUID } from 'node:crypto';
 import { existsSync, mkdirSync, writeFileSync, renameSync, rmSync, copyFileSync } from 'node:fs';
-import { join, dirname, isAbsolute, normalize, sep } from 'node:path';
+import { join, dirname, isAbsolute, normalize, resolve, sep, win32 } from 'node:path';
 import { Database } from '../../bank/db.js';
 import { readZip, type ZipEntry } from '../zip-utils.js';
 import type { BackupManifest } from '../backup/backup-service.js';
@@ -55,7 +55,7 @@ export function previewBackup(backupPath: string): RestorePreview {
 
     // 路径门禁：检查所有条目路径
     for (const entry of entries) {
-      if (isAbsolute(entry.path)) {
+      if (isAbsolute(entry.path) || win32.isAbsolute(entry.path)) {
         errors.push(`Absolute path detected: ${entry.path}`);
       }
 
@@ -158,17 +158,24 @@ export async function restoreBackup(
     mkdirSync(stagingDir, { recursive: true });
 
     const entries = readZip(backupPath);
+    const resolvedStaging = resolve(stagingDir);
 
     for (const entry of entries) {
       if (entry.path === 'manifest.json') continue; // manifest 已读过
 
-      const targetPath = join(stagingDir, entry.path);
+      const targetPath = resolve(stagingDir, entry.path);
+      if (!targetPath.startsWith(resolvedStaging + sep)) {
+        throw new Error(`Path traversal detected: ${entry.path}`);
+      }
       mkdirSync(dirname(targetPath), { recursive: true });
       writeFileSync(targetPath, entry.content);
     }
 
     // 5. 验证 staging 数据库
-    const stagingDbPath = join(stagingDir, manifest.database.path);
+    const stagingDbPath = resolve(stagingDir, manifest.database.path);
+    if (!stagingDbPath.startsWith(resolvedStaging + sep)) {
+      throw new Error(`Invalid database path in manifest: ${manifest.database.path}`);
+    }
     if (!existsSync(stagingDbPath)) {
       throw new Error('Database file not found in backup');
     }

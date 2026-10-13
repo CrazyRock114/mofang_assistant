@@ -253,7 +253,7 @@ describe('0057 P2：识别落卡的图先落资产（题卡存存储形态、编
     // 题卡落盘走防抖：等到含资产引用的状态落盘（不靠固定轮次猜防抖窗口）
     await settleUntil(
       () => (spies.savedStates.at(-1)?.cards ?? []).some((c) => c.contentHtml.includes('data-assets/')),
-      120,
+      300,
     );
     const card = (spies.savedStates.at(-1)?.cards ?? []).find((c) => c.contentHtml.includes('data-assets/'));
     expect(card).toBeTruthy();

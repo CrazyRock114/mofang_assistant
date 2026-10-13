@@ -10,11 +10,22 @@ import { createMockExtServices } from '../../bank/mock/mock-ext.js';
 import { MockBankStore } from '../../bank/mock/mock-store.js';
 
 let sharedMockStore: MockBankStore | null = null;
+let persistenceHooked = false;
 
 /** 浏览器 demo 共享 store（MockBankService 构造时会播种示例数据，幂等无害） */
 export function getSharedMockBankStore(): MockBankStore {
   if (!sharedMockStore) {
     sharedMockStore = new MockBankStore();
+    if (typeof window !== 'undefined' && !persistenceHooked) {
+      persistenceHooked = true;
+      import('./web-storage.js').then(({ loadStoreFromIndexedDb, scheduleAutoSave }) => {
+        void loadStoreFromIndexedDb(sharedMockStore!).then(() => {
+          sharedMockStore!.onChange(() => {
+            scheduleAutoSave(sharedMockStore!);
+          });
+        });
+      }).catch(console.error);
+    }
   }
   return sharedMockStore;
 }

@@ -158,6 +158,11 @@ export function App() {
   return <AppShell route={route}><HomePage /></AppShell>;
 }
 
+import { initWebBridges } from './services/web-bridges.js';
+
+// 初始化纯网页端 Polyfill 桥接口（如非 Electron 环境）
+initWebBridges();
+
 // 入口自挂载（生产 index.html 提供 #root；测试/SSR 无 #root 时跳过，便于直接测 App 路由）
 const rootEl = document.getElementById('root');
 if (rootEl) {

@@ -10,7 +10,7 @@
 //  - 旧目录保留不删（迁移备份也留在旧位置的 backups/，不随迁移重复占空间）。
 
 import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
-import { dirname, isAbsolute, join, relative, resolve } from 'node:path';
+import { dirname, isAbsolute, join, relative, resolve, win32 } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import {
   VOLATILE_RUNTIME_ENTRIES,
@@ -50,8 +50,20 @@ function messageOf(err: unknown): string {
   return err instanceof Error ? err.message : String(err);
 }
 
+/** 跨平台路径是否为绝对路径（支持 Windows 盘符与 UNC 路径以及 POSIX / 根路径） */
+export function isPathAbsolute(p: string): boolean {
+  return isAbsolute(p) || win32.isAbsolute(p);
+}
+
+function isWindowsStylePath(p: string): boolean {
+  return process.platform === 'win32' || /^[a-zA-Z]:[\\/]/.test(p);
+}
+
 /** Windows 盘符大小写不敏感口径的同一路径判定 */
 function samePath(a: string, b: string): boolean {
+  if (isWindowsStylePath(a) || isWindowsStylePath(b)) {
+    return win32.resolve(a).toLowerCase() === win32.resolve(b).toLowerCase();
+  }
   const na = resolve(a);
   const nb = resolve(b);
   return process.platform === 'win32' ? na.toLowerCase() === nb.toLowerCase() : na === nb;
@@ -59,6 +71,10 @@ function samePath(a: string, b: string): boolean {
 
 /** child 是否位于 parent 之下（不含相等） */
 function isSubPath(child: string, parent: string): boolean {
+  if (isWindowsStylePath(child) || isWindowsStylePath(parent)) {
+    const rel = win32.relative(win32.resolve(parent), win32.resolve(child));
+    return rel !== '' && !rel.startsWith('..') && !win32.isAbsolute(rel);
+  }
   const rel = relative(resolve(parent), resolve(child));
   return rel !== '' && !rel.startsWith('..') && !isAbsolute(rel);
 }
@@ -167,7 +183,7 @@ export function resolveBootstrapPlan(env: BootstrapEnv): BootstrapPlan {
   let source: DataLocationSource = 'default';
 
   if (config.dataRoot !== undefined) {
-    if (!isAbsolute(config.dataRoot)) {
+    if (!isPathAbsolute(config.dataRoot)) {
       warnings.push(`配置的数据位置不是绝对路径（${config.dataRoot}），按默认位置启动`);
       delete config.dataRoot;
     } else if (ensureWritableDir(config.dataRoot)) {
@@ -206,7 +222,7 @@ export function resolveBootstrapPlan(env: BootstrapEnv): BootstrapPlan {
     } catch (err) {
       warnings.push(`清除待迁移配置失败：${messageOf(err)}`);
     }
-  } else if (pendingDataRoot !== null && !isAbsolute(pendingDataRoot)) {
+  } else if (pendingDataRoot !== null && !isPathAbsolute(pendingDataRoot)) {
     warnings.push(`待迁移目标不是绝对路径（${pendingDataRoot}），本次跳过迁移`);
     pendingDataRoot = null;
   }
@@ -223,7 +239,7 @@ export type TargetVerdict = { ok: true } | { ok: false; error: string };
 export function validateTargetDir(target: string, currentUserData: string): TargetVerdict {
   const value = (target ?? '').trim();
   if (value === '') return { ok: false, error: '请选择目标目录' };
-  if (!isAbsolute(value)) return { ok: false, error: '目标目录必须是绝对路径' };
+  if (!isPathAbsolute(value)) return { ok: false, error: '目标目录必须是绝对路径' };
   if (samePath(value, currentUserData)) {
     return { ok: false, error: '目标目录与当前数据位置相同，无需更改' };
   }

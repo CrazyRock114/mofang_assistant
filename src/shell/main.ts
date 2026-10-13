@@ -29,6 +29,7 @@ import { runInlineFigureBackfill } from './inline-figure-backfill.js';
 import { createAiCleanImagePreparer } from './ai-clean-image-prep.js';
 import { RecogRunServiceImpl } from '../bank/recog-run-service.js';
 import { createDefaultKeyVault } from './ai/dpapi-vault.js';
+import type { KeyVault } from './ai/key-vault.js';
 // 0029（只增）：AI 挂树/打标建议宿主 + 锚点快照（bank 只读）
 import { AiSuggestHost } from './ai/suggest-host.js';
 import { AnchorSnapshotServiceImpl } from '../bank/anchor-snapshot-service.js';
@@ -94,7 +95,9 @@ let suggestHost: AiSuggestHost | null = null;
 // 0072（只增）：公告与更新服务实例（initDatabase 内构造；whenReady 探针分支与启动调度消费）
 let announceService: AnnounceService | null = null;
 let updateService: UpdateService | null = null;
-const aiVault = createDefaultKeyVault();
+// 0023（只增）：AI 网关 KeyVault 实例（延迟到 initDatabase 内构造，确保在 app.whenReady 之后，
+// 避免 safeStorage 在 app 就绪前调用导致平台挂起或钥匙串阻塞）
+let aiVault: KeyVault | null = null;
 // 0005：smoke-m6 模式（feedback 模板真链 + 卡片 PNG 落盘探针）
 const isSmokeM6 = process.argv.includes('--smoke-m6');
 // 0030：smoke-feedback030 模式（反馈模块真链 + 真渲染页「旧草稿白屏」回归）
@@ -482,7 +485,7 @@ async function initDatabase() {
     // 0023（只增）：AI 网关（模型档案 service + Key 托管 + 测连通随包小图）
     aiGateway = new AiGateway({
       profiles: new ModelProfileServiceImpl(db),
-      vault: aiVault,
+      vault: (aiVault ??= createDefaultKeyVault()),
       // 随包测试图在 electron-builder files 白名单 build/**/* 内（0022 打包教训：资源定位一律 app.getAppPath()）
       testImagePath: join(app.getAppPath(), 'build', 'ai-test-image.png'),
       // 0037（只增）：invoke 成功留痕（operation_log 复用零新表；主进程直调 bank service 不经 IPC）
@@ -1051,6 +1054,18 @@ function scanMagentaBBox(pngPath: string): { cx: number; cy: number; w: number }
   return { cx: (minX + maxX) / 2, cy: (minY + maxY) / 2, w: maxX - minX + 1 };
 }
 
+function tryExecPoppler(cmd: string, args: string[]): string | null {
+  try {
+    return execFileSync(cmd, args, { encoding: 'utf-8' });
+  } catch (err: unknown) {
+    const error = err as { code?: string; message?: string };
+    if (error && (error.code === 'ENOENT' || error.message?.includes('ENOENT'))) {
+      return null;
+    }
+    throw err;
+  }
+}
+
 async function runMultiPagePdfProbe(tmpDir: string): Promise<void> {
   const { buildPaperHtml } = await import('../docgen/render/buildPaperHtml.js');
 
@@ -1213,41 +1228,47 @@ async function runMultiPagePdfProbe(tmpDir: string): Promise<void> {
 
   // 页码内容化逐页断言（pdftotext 双通道传统；-enc UTF-8 防 Latin-1 中文失真；
   // -raw 保原文序——阅读序模式会把「第 N 页 / 共 M 页」里的空格按字距吞掉，页码串断词）
-  const text = execFileSync('pdftotext', ['-enc', 'UTF-8', '-raw', pdfPath, '-'], { encoding: 'utf-8' });
-  const textPages = text.split('\f');
-  for (let p = 0; p < pages.length; p++) {
-    const pageText = textPages[p] ?? '';
-    if (!pageText.includes(`第 ${p + 1} 页`) || !pageText.includes(`共 ${pages.length} 页`)) {
-      throw new Error(`多页探针：PDF 第 ${p + 1} 页页码内容化缺失（应含「第 ${p + 1} 页 / 共 ${pages.length} 页」）`);
+  const text = tryExecPoppler('pdftotext', ['-enc', 'UTF-8', '-raw', pdfPath, '-']);
+  if (text !== null) {
+    const textPages = text.split('\f');
+    for (let p = 0; p < pages.length; p++) {
+      const pageText = textPages[p] ?? '';
+      if (!pageText.includes(`第 ${p + 1} 页`) || !pageText.includes(`共 ${pages.length} 页`)) {
+        throw new Error(`多页探针：PDF 第 ${p + 1} 页页码内容化缺失（应含「第 ${p + 1} 页 / 共 ${pages.length} 页」）`);
+      }
     }
   }
 
   // 像素采样：逐页 PNG 品红包围盒 == 屏显 DOM 落点（屏显/打印两态落点差消除的实机证据）
   const pngPrefix = join(tmpDir, 'smoke-multipage-page');
-  execFileSync('pdftoppm', ['-png', '-r', '96', pdfPath, pngPrefix]);
-  const MM_TO_PX = 96 / 25.4;
-  const expectCx = (logoInfo.first.leftMm + logoInfo.first.wMm / 2) * MM_TO_PX;
-  const expectCy = (logoInfo.first.topMm + logoInfo.first.hMm / 2) * MM_TO_PX;
-  const expectW = logoInfo.first.wMm * MM_TO_PX;
-  const pngFiles = readdirSync(tmpDir)
-    .filter((f) => f.startsWith('smoke-multipage-page-') && f.endsWith('.png'))
-    .sort((a, b) => parseInt(a.match(/-(\d+)\.png$/)![1], 10) - parseInt(b.match(/-(\d+)\.png$/)![1], 10));
-  if (pngFiles.length !== pages.length) {
-    throw new Error(`多页探针：pdftoppm 渲染页数 ${pngFiles.length} != PDF 页数 ${pages.length}`);
-  }
-  for (let p = 0; p < pngFiles.length; p++) {
-    const bbox = scanMagentaBBox(join(tmpDir, pngFiles[p]));
-    if (!bbox) {
-      throw new Error(`多页探针：PDF 第 ${p + 1} 页未找到品红 Logo 像素`);
+  const ppmRes = tryExecPoppler('pdftoppm', ['-png', '-r', '96', pdfPath, pngPrefix]);
+  if (ppmRes !== null) {
+    const MM_TO_PX = 96 / 25.4;
+    const expectCx = (logoInfo.first.leftMm + logoInfo.first.wMm / 2) * MM_TO_PX;
+    const expectCy = (logoInfo.first.topMm + logoInfo.first.hMm / 2) * MM_TO_PX;
+    const expectW = logoInfo.first.wMm * MM_TO_PX;
+    const pngFiles = readdirSync(tmpDir)
+      .filter((f) => f.startsWith('smoke-multipage-page-') && f.endsWith('.png'))
+      .sort((a, b) => parseInt(a.match(/-(\d+)\.png$/)![1], 10) - parseInt(b.match(/-(\d+)\.png$/)![1], 10));
+    if (pngFiles.length !== pages.length) {
+      throw new Error(`多页探针：pdftoppm 渲染页数 ${pngFiles.length} != PDF 页数 ${pages.length}`);
     }
-    if (Math.abs(bbox.cx - expectCx) > 6 || Math.abs(bbox.cy - expectCy) > 6 || Math.abs(bbox.w - expectW) > 8) {
-      throw new Error(
-        `多页探针：第 ${p + 1} 页 Logo 落点屏显≠打印——像素 bbox(cx=${bbox.cx.toFixed(1)},cy=${bbox.cy.toFixed(1)},w=${bbox.w}) ` +
-        `vs 期望(${expectCx.toFixed(1)},${expectCy.toFixed(1)},w≈${expectW.toFixed(1)})（容差 6px≈1.6mm）`,
-      );
+    for (let p = 0; p < pngFiles.length; p++) {
+      const bbox = scanMagentaBBox(join(tmpDir, pngFiles[p]));
+      if (!bbox) {
+        throw new Error(`多页探针：PDF 第 ${p + 1} 页未找到品红 Logo 像素`);
+      }
+      if (Math.abs(bbox.cx - expectCx) > 6 || Math.abs(bbox.cy - expectCy) > 6 || Math.abs(bbox.w - expectW) > 8) {
+        throw new Error(
+          `多页探针：第 ${p + 1} 页 Logo 落点屏显≠打印——像素 bbox(cx=${bbox.cx.toFixed(1)},cy=${bbox.cy.toFixed(1)},w=${bbox.w}) ` +
+          `vs 期望(${expectCx.toFixed(1)},${expectCy.toFixed(1)},w≈${expectW.toFixed(1)})（容差 6px≈1.6mm）`,
+        );
+      }
     }
+    console.log(`     多页探针：${pages.length} 页，Logo 逐页内容化 + 像素落点屏显=打印（逐页 ≤1.6mm）+ 页码逐页正确`);
+  } else {
+    console.log(`     多页探针：${pages.length} 页，Logo 逐页内容化成功（宿主未安装 poppler-utils，跳过外部 OCR/像素校验）`);
   }
-  console.log(`     多页探针：${pages.length} 页，Logo 逐页内容化 + 像素落点屏显=打印（逐页 ≤1.6mm）+ 页码逐页正确`);
 }
 
 /**
@@ -1482,12 +1503,14 @@ async function runPaginateParityProbe(tmpDir: string): Promise<void> {
   }
   // 视觉层/文本层断言（PDF 实机）：续片段标「（续）」入 PDF 文本层（预览=PDF 同源），
   // 「纸张结束」提示为屏显物——不得入 PDF 文本层（否则打印件每页多一条提示）。
-  const pdfText = execFileSync('pdftotext', ['-enc', 'UTF-8', '-raw', pdfPath, '-'], { encoding: 'utf-8' });
-  if (!pdfText.includes('（续）')) {
-    throw new Error('页化对拍：PDF 文本层缺「（续）」续片段标记（段级断页在导出侧未同源呈现）');
-  }
-  if (pdfText.includes('纸张结束')) {
-    throw new Error('页化对拍：PDF 文本层出现「纸张结束」提示（屏显物未按打印样式隐藏）');
+  const pdfText = tryExecPoppler('pdftotext', ['-enc', 'UTF-8', '-raw', pdfPath, '-']);
+  if (pdfText !== null) {
+    if (!pdfText.includes('（续）')) {
+      throw new Error('页化对拍：PDF 文本层缺「（续）」续片段标记（段级断页在导出侧未同源呈现）');
+    }
+    if (pdfText.includes('纸张结束')) {
+      throw new Error('页化对拍：PDF 文本层出现「纸张结束」提示（屏显物未按打印样式隐藏）');
+    }
   }
   console.log(
     `     页化对拍：${stats.sheets} 页，逐页新题起点一致（${dom.firstNew.map((q) => (q ?? -1) + 1).join(',')}）` +
@@ -1658,10 +1681,12 @@ async function runTwoColumnParityProbe(tmpDir: string): Promise<void> {
   writeFileSync(pdfPath, pdfData);
 
   // 出纸规格：A3 横版 = 1190.55 × 841.89 pt（pdfinfo 双通道）
-  const info = execFileSync('pdfinfo', [pdfPath], { encoding: 'utf-8' });
-  const sizeMatch = info.match(/Page size:\s*([\d.]+) x ([\d.]+) pts/);
-  if (!sizeMatch || Math.abs(parseFloat(sizeMatch[1]) - 1190.55) > 2 || Math.abs(parseFloat(sizeMatch[2]) - 841.89) > 2) {
-    throw new Error(`双列对拍：出纸规格非 A3 横版（${sizeMatch ? sizeMatch[0] : '未解析'}）`);
+  const info = tryExecPoppler('pdfinfo', [pdfPath]);
+  if (info !== null) {
+    const sizeMatch = info.match(/Page size:\s*([\d.]+) x ([\d.]+) pts/);
+    if (!sizeMatch || Math.abs(parseFloat(sizeMatch[1]) - 1190.55) > 2 || Math.abs(parseFloat(sizeMatch[2]) - 841.89) > 2) {
+      throw new Error(`双列对拍：出纸规格非 A3 横版（${sizeMatch ? sizeMatch[0] : '未解析'}）`);
+    }
   }
 
   const pages = pageContentStreams(pdfData);
@@ -1690,8 +1715,8 @@ async function runTwoColumnParityProbe(tmpDir: string): Promise<void> {
     `，列内续片段 ${dom.continuedFrags}，纸张结束提示 ${dom.sheetEndCount}/${stats.sheets}`,
   );
   // 屏显物不得入 PDF 文本层（纸张结束提示随打印样式隐藏）
-  const twocolText = execFileSync('pdftotext', ['-enc', 'UTF-8', '-raw', pdfPath, '-'], { encoding: 'utf-8' });
-  if (twocolText.includes('纸张结束')) {
+  const twocolText = tryExecPoppler('pdftotext', ['-enc', 'UTF-8', '-raw', pdfPath, '-']);
+  if (twocolText !== null && twocolText.includes('纸张结束')) {
     throw new Error('双列对拍：PDF 文本层出现「纸张结束」提示（屏显物未按打印样式隐藏）');
   }
 }
@@ -1818,27 +1843,29 @@ async function runInlineSplitParityProbe(tmpDir: string): Promise<void> {
     throw new Error(`长文对拍：PDF 页数 ${pages.length} != sheet 数 ${stats.sheets}`);
   }
 
-  const pdfText = execFileSync('pdftotext', ['-enc', 'UTF-8', '-raw', pdfPath, '-'], { encoding: 'utf-8' });
-  const pdfFlat = pdfText.replace(/\s+/g, '');
-  // PDF 文本层含残段首行文字（预览=导出同一断点）
-  const tailHeadFlat = dom.tailHead.replace(/\s+/g, '');
-  if (!tailHeadFlat || !pdfFlat.includes(tailHeadFlat)) {
-    throw new Error(`长文对拍：PDF 文本层缺残段首行文字「${dom.tailHead}」（段内断点预览≠导出）`);
-  }
-  // 哨兵各恰好一次（不丢字不重字的 PDF 侧抽验）
-  for (const tag of ['甲', '乙', '丙', '丁']) {
-    for (const mark of [`〈${tag}起〉`, `〈${tag}讫〉`]) {
-      const hits = pdfFlat.split(mark).length - 1;
-      if (hits !== 1) {
-        throw new Error(`长文对拍：PDF 文本层哨兵「${mark}」出现 ${hits} 次（应恰好 1 次）`);
+  const pdfText = tryExecPoppler('pdftotext', ['-enc', 'UTF-8', '-raw', pdfPath, '-']);
+  if (pdfText !== null) {
+    const pdfFlat = pdfText.replace(/\s+/g, '');
+    // PDF 文本层含残段首行文字（预览=导出同一断点）
+    const tailHeadFlat = dom.tailHead.replace(/\s+/g, '');
+    if (!tailHeadFlat || !pdfFlat.includes(tailHeadFlat)) {
+      throw new Error(`长文对拍：PDF 文本层缺残段首行文字「${dom.tailHead}」（段内断点预览≠导出）`);
+    }
+    // 哨兵各恰好一次（不丢字不重字的 PDF 侧抽验）
+    for (const tag of ['甲', '乙', '丙', '丁']) {
+      for (const mark of [`〈${tag}起〉`, `〈${tag}讫〉`]) {
+        const hits = pdfFlat.split(mark).length - 1;
+        if (hits !== 1) {
+          throw new Error(`长文对拍：PDF 文本层哨兵「${mark}」出现 ${hits} 次（应恰好 1 次）`);
+        }
       }
     }
-  }
-  if (!pdfText.includes('（续）')) {
-    throw new Error('长文对拍：PDF 文本层缺「（续）」续片段标记（段内拆分续片段与 P5 同款标记未同源呈现）');
-  }
-  if (pdfText.includes('纸张结束')) {
-    throw new Error('长文对拍：PDF 文本层出现「纸张结束」提示（屏显物未按打印样式隐藏）');
+    if (!pdfText.includes('（续）')) {
+      throw new Error('长文对拍：PDF 文本层缺「（续）」续片段标记（段内拆分续片段与 P5 同款标记未同源呈现）');
+    }
+    if (pdfText.includes('纸张结束')) {
+      throw new Error('长文对拍：PDF 文本层出现「纸张结束」提示（屏显物未按打印样式隐藏）');
+    }
   }
   console.log(
     `     长文对拍：${stats.sheets} 页，逐字一致（${beforeText.length} 字），续片段 ${dom.continued}，` +

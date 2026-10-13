@@ -2,11 +2,11 @@
 // 模式照 AiServiceFactory（页面组件统一从 factory 拿服务实例，不直接摸 window）。
 
 import type { MofangRecogBridge } from '../../shared/contracts/bridge.js';
-import { createMockRecogBridge } from '../../bank/mock/mock-recog.js';
+import { createWebRecogBridge } from './web-recog.js';
 
 export function createRecogService(): MofangRecogBridge {
   if (window.__mofangRecog) {
     return window.__mofangRecog;
   }
-  return createMockRecogBridge();
+  return createWebRecogBridge();
 }

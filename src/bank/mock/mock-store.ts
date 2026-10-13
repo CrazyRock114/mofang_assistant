@@ -292,8 +292,28 @@ export class MockBankStore {
     builtinPromptSeed('feedback-prompt-builtin-senior', '通用课后反馈·高中', BUILTIN_PROMPT_SENIOR, '2026-09-22T12:00:00Z');
   }
 
+  private changeListeners: Array<() => void> = [];
+
+  onChange(listener: () => void): () => void {
+    this.changeListeners.push(listener);
+    return () => {
+      this.changeListeners = this.changeListeners.filter((l) => l !== listener);
+    };
+  }
+
+  notifyChange(): void {
+    for (const listener of this.changeListeners) {
+      try {
+        listener();
+      } catch (err) {
+        console.error('Error in store change listener:', err);
+      }
+    }
+  }
+
   log(type: string, description: string, affectedCount = 0): void {
     this.logs.push({ type, timestamp: new Date().toISOString(), status: 'succeeded', description, affectedCount });
+    this.notifyChange();
   }
 }
 
