@@ -36,6 +36,7 @@ import { FeedbackPage } from './pages/FeedbackPage.js';
 // 0053：#/settings?view=ai 深链解析（hashSearchOf 复用，nav.ts 现成工具）
 import { SettingsPage } from './pages/SettingsPage.js';
 import { hashSearchOf } from './utils/nav.js';
+import { initWebBridges } from './services/web-bridges.js';
 
 /** 旧路由 301 式重定向（渲染即改 hash，由 hashchange 驱动重渲） */
 function RouteRedirect({ to }: { to: string }) {
@@ -157,8 +158,6 @@ export function App() {
 
   return <AppShell route={route}><HomePage /></AppShell>;
 }
-
-import { initWebBridges } from './services/web-bridges.js';
 
 // 初始化纯网页端 Polyfill 桥接口（如非 Electron 环境）
 initWebBridges();

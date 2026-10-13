@@ -22,6 +22,7 @@ import {
   saveStoreToIndexedDb,
   downloadJsonFile,
 } from './web-storage.js';
+import { classifyWorkOperation, localDateKey } from '../../bank/dashboard-service.js';
 
 function triggerFilePick(accept: string): Promise<File | null> {
   return new Promise((resolve) => {
@@ -91,36 +92,32 @@ export function computeWebDashboard(store: MockBankStore): HomeDashboardStats {
     };
   });
 
-  // 26 周工作足迹窗口 (182 天)
-  const activityDays: HomeActivityDay[] = [];
-  const startDay = new Date(now);
-  startDay.setDate(now.getDate() - 182);
+  // 26 周工作足迹窗口 (起点 = 本周一 - 26 周)
+  const mondayOffset = (now.getDay() + 6) % 7;
+  const startDay = new Date(now.getFullYear(), now.getMonth(), now.getDate() - mondayOffset - 26 * 7);
 
-  // 统计每天各个动作频次
+  // 统计每天动作按六类归桶
   const dayMap = new Map<string, Record<HomeWorkCategory, number>>();
   for (const log of store.logs) {
     const dateStr = log.timestamp.slice(0, 10);
     if (!dayMap.has(dateStr)) {
-      dayMap.set(dateStr, { intake: 0, bank: 0, compose: 0, feedback: 0, ai: 0, capture: 0 });
+      dayMap.set(dateStr, { proof: 0, capture: 0, compose: 0, mistake: 0, feedback: 0, ai: 0 });
     }
-    const cat = dayMap.get(dateStr)!;
-    if (log.type.startsWith('question.')) cat.bank++;
-    else if (log.type.startsWith('paper.')) cat.compose++;
-    else if (log.type.startsWith('feedback.')) cat.feedback++;
-    else if (log.type.startsWith('ai.')) cat.ai++;
-    else if (log.type.startsWith('recog.')) cat.intake++;
+    const cat = classifyWorkOperation(log.type);
+    if (cat) {
+      dayMap.get(dateStr)![cat]++;
+    }
   }
 
+  const activityDays: HomeActivityDay[] = [];
   const cur = new Date(startDay);
   while (cur <= now) {
-    const dStr = cur.toISOString().slice(0, 10);
-    const counts = dayMap.get(dStr) ?? { intake: 0, bank: 0, compose: 0, feedback: 0, ai: 0, capture: 0 };
-    const total = Object.values(counts).reduce((a, b) => a + b, 0);
+    const dStr = localDateKey(cur);
+    const byCategory = dayMap.get(dStr) ?? { proof: 0, capture: 0, compose: 0, mistake: 0, feedback: 0, ai: 0 };
     activityDays.push({
       date: dStr,
-      counts,
-      total,
-      level: total === 0 ? 0 : total <= 2 ? 1 : total <= 5 ? 2 : total <= 10 ? 3 : 4,
+      byCategory,
+      tokens: 0,
     });
     cur.setDate(cur.getDate() + 1);
   }
@@ -129,15 +126,19 @@ export function computeWebDashboard(store: MockBankStore): HomeDashboardStats {
   let currentStreak = 0;
   let longestStreak = 0;
   let tempStreak = 0;
+
   for (let i = activityDays.length - 1; i >= 0; i--) {
-    if (activityDays[i].total > 0) {
-      if (i === activityDays.length - 1 || currentStreak > 0) currentStreak++;
-    } else if (currentStreak > 0) {
+    const dayTot = Object.values(activityDays[i].byCategory).reduce((s, n) => s + n, 0);
+    if (dayTot > 0) {
+      currentStreak++;
+    } else {
       break;
     }
   }
+
   for (const day of activityDays) {
-    if (day.total > 0) {
+    const dayTot = Object.values(day.byCategory).reduce((s, n) => s + n, 0);
+    if (dayTot > 0) {
       tempStreak++;
       if (tempStreak > longestStreak) longestStreak = tempStreak;
     } else {
