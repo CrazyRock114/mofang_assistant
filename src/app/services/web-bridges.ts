@@ -245,6 +245,8 @@ export function createWebFileBridge(): MofangFileBridge {
   };
 }
 
+let pendingRestoreData: any = null;
+
 export function createWebGuardBridge(store: MockBankStore): MofangGuardBridge {
   return {
     getDashboard: async () => computeWebDashboard(store),
@@ -252,25 +254,75 @@ export function createWebGuardBridge(store: MockBankStore): MofangGuardBridge {
     getStats: async () => ({
       questions: store.questions.size,
       papers: store.papers.size,
-      dbSizeBytes: 0,
+      assets: 0,
     }),
 
     createBackup: async () => {
-      const data = serializeStore(store);
-      const filename = `mofang-backup-${new Date().toISOString().slice(0, 10)}.json`;
-      downloadJsonFile(filename, JSON.stringify(data, null, 2));
-      return { ok: true, filePath: filename, timestamp: new Date().toISOString() };
+      try {
+        const data = serializeStore(store);
+        const filename = `mofang-backup-${new Date().toISOString().slice(0, 10)}.json`;
+        downloadJsonFile(filename, JSON.stringify(data, null, 2));
+        return {
+          success: true,
+          backupPath: filename,
+          manifest: {
+            backup_id: `backup-${Date.now()}`,
+            created_at: new Date().toISOString(),
+            counts: {
+              questions: store.questions.size,
+              papers: store.papers.size,
+              assets: 0,
+            },
+          },
+        };
+      } catch (err) {
+        return { success: false, error: err instanceof Error ? err.message : String(err) };
+      }
     },
 
-    restoreBackup: async () => {
-      const file = await triggerFilePick('.json');
-      if (!file) throw new Error('用户取消了选择备份文件');
-      const text = await readFileAsText(file);
-      const data = JSON.parse(text);
-      deserializeStore(store, data);
-      await saveStoreToIndexedDb(store);
-      store.notifyChange();
-      return { ok: true, restoredAt: new Date().toISOString(), backupPath: file.name };
+    restoreBackup: async (payload: { confirmed: boolean }) => {
+      try {
+        if (!payload.confirmed) {
+          const file = await triggerFilePick('.json');
+          if (!file) throw new Error('用户取消了选择备份文件');
+          const text = await readFileAsText(file);
+          pendingRestoreData = JSON.parse(text);
+          const qCount = Array.isArray(pendingRestoreData.questions) ? pendingRestoreData.questions.length : 0;
+          const pCount = Array.isArray(pendingRestoreData.papers) ? pendingRestoreData.papers.length : 0;
+          return {
+            success: true,
+            needsConfirmation: true,
+            manifest: {
+              counts: {
+                questions: qCount,
+                papers: pCount,
+                assets: 0,
+              },
+            },
+          } as any;
+        }
+
+        if (!pendingRestoreData) {
+          throw new Error('未找到待恢复的备份数据，请重新选择备份文件');
+        }
+
+        deserializeStore(store, pendingRestoreData);
+        pendingRestoreData = null;
+        await saveStoreToIndexedDb(store);
+        store.notifyChange();
+
+        return {
+          success: true,
+          restored: {
+            questions: store.questions.size,
+            papers: store.papers.size,
+            assets: 0,
+          },
+        };
+      } catch (err) {
+        pendingRestoreData = null;
+        return { success: false, error: err instanceof Error ? err.message : String(err) };
+      }
     },
   };
 }
